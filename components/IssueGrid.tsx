@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { CategoryWithItems, Employee, Vehicle } from '@/lib/types';
-import { BillRow } from '@/app/page';
+import { CategoryWithItems, Employee, Vehicle , BillRow } from '@/lib/types';
 
 interface IssueGridProps {
   categories: CategoryWithItems[];

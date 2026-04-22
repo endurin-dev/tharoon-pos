@@ -75,3 +75,12 @@ export interface ItemWithEntry extends Item {
   effective_selling: number;
   issue_item_id?: number;
 }
+
+export interface BillRow {
+  id?: number;
+  session_id?: number;
+  description: string;
+  qty: number;
+  amount: number;
+  sort_order: number;
+}

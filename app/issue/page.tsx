@@ -4,16 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import IssueGrid from '@/components/IssueGrid';
 import BillModal from '@/components/BillModal';
 import SummaryModal from '@/components/SummaryModal';
-import { CategoryWithItems, Employee, Vehicle } from '@/lib/types';
+import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
 
-export interface BillRow {
-  id?: number;
-  session_id?: number;
-  description: string;
-  qty: number;
-  amount: number;
-  sort_order: number;
-}
+
 
 export default function HomePage() {
   const today = new Date().toISOString().split('T')[0];
