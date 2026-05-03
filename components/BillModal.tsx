@@ -1,7 +1,6 @@
 'use client';
 
-import { CategoryWithItems, Employee, Vehicle , BillRow } from '@/lib/types';
-
+import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
 
 interface BillModalProps {
   categories: CategoryWithItems[];
@@ -34,16 +33,20 @@ export default function BillModal({
   const finalBalance = grandSell - grandCost + billRowsTotal;
   const handlePrint = () => window.print();
 
+  const colStyle = (align: 'left' | 'center' | 'right' = 'center'): React.CSSProperties => ({
+    textAlign: align, padding: '0 2px', fontSize: '13pt',
+  });
+
   return (
     <>
       <style>{`
         @media print {
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: 96mm auto; margin: 0; }
           body * { visibility: hidden; }
           #bill-content, #bill-content * { visibility: visible; }
           #bill-content {
             position: fixed; top: 0; left: 0;
-            width: 72mm; padding: 2mm 3mm;
+            width: 90mm; padding: 3mm 4mm;
             border: none !important; box-shadow: none !important;
           }
           .no-print { display: none !important; }
@@ -54,15 +57,16 @@ export default function BillModal({
         <div className="bg-white text-black rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
           <div id="bill-content" style={{
-            width: '72mm', margin: '0 auto',
+            width: '90mm', margin: '0 auto',
             fontFamily: "'Courier New', monospace",
-            fontSize: '9pt', color: '#000',
-            padding: '4mm 3mm', boxSizing: 'border-box' as const,
+            fontSize: '11pt', color: '#000',
+            padding: '5mm 4mm', boxSizing: 'border-box',
           }}>
+
             {/* Header */}
-            <div style={{ textAlign: 'center', borderBottom: '1px solid #000', paddingBottom: '3mm', marginBottom: '3mm' }}>
-              <div style={{ fontSize: '13pt', fontWeight: 'bold', letterSpacing: '1px' }}>තරූන් බේකර්ස්</div>
-              <div style={{ fontSize: '9pt' }}>නිකුත් කිරීමේ රිසිට්පත</div>
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '4mm', marginBottom: '4mm' }}>
+              <div style={{ fontSize: '20pt', fontWeight: 'bold', letterSpacing: '1px' }}>තරූන් බේකර්ස්</div>
+              <div style={{ fontSize: '13pt', marginTop: '2mm' }}>නිකුත් කිරීමේ රිසිට්පත</div>
             </div>
 
             {/* Session info */}
@@ -73,106 +77,121 @@ export default function BillModal({
               ['සැසිය', sessionType === 'full_day' ? 'සම්පූර්ණ දිනය' : 'උදේ'],
               ['ගෙවීම', paymentStatus === 'paid' ? 'ගෙවා ඇත' : 'ගෙවා නැත'],
             ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8pt', marginBottom: '1px' }}>
+              <div key={label} style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: '12pt', padding: '4px 0',
+                borderBottom: '1px dashed #ccc',
+              }}>
                 <span style={{ fontWeight: 'bold' }}>{label}:</span>
                 <span style={{ fontWeight: label === 'ගෙවීම' ? 'bold' : 'normal' }}>{value}</span>
               </div>
             ))}
 
-            <div style={{ borderTop: '1px dashed #000', margin: '3mm 0' }} />
+            <div style={{ borderTop: '2px solid #000', margin: '4mm 0' }} />
 
-            {/* Items table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
-              <thead>
-                <tr style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000' }}>
-                  <th style={{ textAlign: 'left', padding: '1px', width: '28mm', fontSize: '7pt' }}>භාණ්ඩය</th>
-                  <th style={{ textAlign: 'center', padding: '1px', width: '6mm', fontSize: '7pt' }}>උදේ</th>
-                  <th style={{ textAlign: 'center', padding: '1px', width: '6mm', fontSize: '7pt' }}>සවස</th>
-                  <th style={{ textAlign: 'center', padding: '1px', width: '6mm', fontSize: '7pt' }}>ආප</th>
-                  <th style={{ textAlign: 'center', padding: '1px', width: '6mm', fontSize: '7pt' }}>විකි</th>
-                  <th style={{ textAlign: 'right', padding: '1px', width: '10mm', fontSize: '7pt' }}>විකිණුම</th>
-                </tr>
-              </thead>
-              <tbody>
-                {billItems.map((item, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: '1px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '28mm' }}>
-                      {item.name}
-                    </td>
-                    <td style={{ textAlign: 'center', padding: '1px' }}>{item.morning_qty || '-'}</td>
-                    <td style={{ textAlign: 'center', padding: '1px' }}>{item.evening_qty || '-'}</td>
-                    <td style={{ textAlign: 'center', padding: '1px' }}>{item.returned_qty || '-'}</td>
-                    <td style={{ textAlign: 'center', padding: '1px', fontWeight: 'bold' }}>{item.sold}</td>
-                    <td style={{ textAlign: 'right', padding: '1px' }}>{item.sell.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr style={{ borderTop: '1px solid #000', fontWeight: 'bold' }}>
-                  <td colSpan={4} style={{ textAlign: 'right', padding: '2px 1px' }}>පිරිවැය:</td>
-                  <td colSpan={2} style={{ textAlign: 'right', padding: '2px 1px' }}>{grandCost.toFixed(2)}</td>
-                </tr>
-                <tr style={{ fontWeight: 'bold' }}>
-                  <td colSpan={4} style={{ textAlign: 'right', padding: '1px' }}>විකිණුම:</td>
-                  <td colSpan={2} style={{ textAlign: 'right', padding: '1px' }}>{grandSell.toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            </table>
+            {/* Items — column header */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
+              borderTop: '2px solid #000', borderBottom: '1px solid #000',
+              padding: '4px 0', marginBottom: '2px',
+            }}>
+              <span style={{ gridColumn: '1 / span 5', fontSize: '10pt', fontWeight: 'bold', marginBottom: '2px' }}>
+                භාණ්ඩය
+              </span>
+              {['උදේ', 'සවස', 'ආප', 'විකි'].map(h => (
+                <span key={h} style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'center' }}>{h}</span>
+              ))}
+              <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right' }}>රු.</span>
+            </div>
+
+            {/* Items — two-line rows */}
+            {billItems.map((item, i) => (
+              <div key={i} style={{ borderBottom: '1px dotted #aaa', padding: '5px 0 4px' }}>
+                <div style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '3px' }}>{item.name}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', textAlign: 'center' }}>
+                  <span style={colStyle()}>{item.morning_qty || '-'}</span>
+                  <span style={colStyle()}>{item.evening_qty || '-'}</span>
+                  <span style={colStyle()}>{item.returned_qty || '-'}</span>
+                  <span style={{ ...colStyle(), fontWeight: 'bold' }}>{item.sold}</span>
+                  <span style={{ ...colStyle('right'), fontWeight: 'bold' }}>{item.sell.toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Cost / Sell totals */}
+            <div style={{ borderTop: '2px solid #000', paddingTop: '4px', marginTop: '4px' }}>
+              {[['පිරිවැය', grandCost], ['විකිණුම', grandSell]].map(([label, val]) => (
+                <div key={label as string} style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  fontSize: '12pt', fontWeight: 'bold', padding: '3px 0',
+                }}>
+                  <span>{label as string}:</span>
+                  <span>{(val as number).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
 
             {/* Extra Bill Rows */}
             {billRows.length > 0 && (
               <>
-                <div style={{ borderTop: '1px dashed #000', margin: '3mm 0 2mm' }} />
-                <div style={{ fontSize: '7pt', fontWeight: 'bold', marginBottom: '1mm', letterSpacing: '0.5px' }}>
-                  අතිරේක:
+                <div style={{ borderTop: '2px dashed #000', margin: '4mm 0 3mm' }} />
+                <div style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '3mm' }}>අතිරේක:</div>
+
+                {/* Extra rows column header */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                  borderTop: '2px solid #000', borderBottom: '1px solid #000',
+                  padding: '4px 0', marginBottom: '2px',
+                }}>
+                  <span style={{ gridColumn: '1 / span 3', fontSize: '10pt', fontWeight: 'bold', marginBottom: '2px' }}>
+                    විස්තරය
+                  </span>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'center' }}>ගණ</span>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right' }}>මිල</span>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right' }}>එකතුව</span>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #ccc' }}>
-                      <th style={{ textAlign: 'left', padding: '1px', fontSize: '7pt' }}>විස්තරය</th>
-                      <th style={{ textAlign: 'center', padding: '1px', width: '8mm', fontSize: '7pt' }}>ගණ</th>
-                      <th style={{ textAlign: 'right', padding: '1px', width: '10mm', fontSize: '7pt' }}>මිල</th>
-                      <th style={{ textAlign: 'right', padding: '1px', width: '12mm', fontSize: '7pt' }}>එකතුව</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {billRows.map((row, i) => (
-                      <tr key={i}>
-                        <td style={{ padding: '1px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                          {row.description}
-                        </td>
-                        <td style={{ textAlign: 'center', padding: '1px' }}>{Number(row.qty)}</td>
-                        <td style={{ textAlign: 'right', padding: '1px' }}>{Number(row.amount).toFixed(2)}</td>
-                        <td style={{ textAlign: 'right', padding: '1px', fontWeight: 'bold' }}>
-                          {(Number(row.qty) * Number(row.amount)).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ borderTop: '1px solid #000', fontWeight: 'bold' }}>
-                      <td colSpan={3} style={{ textAlign: 'right', padding: '1px' }}>අතිරේක එකතුව:</td>
-                      <td style={{ textAlign: 'right', padding: '1px' }}>{billRowsTotal.toFixed(2)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
+
+                {billRows.map((row, i) => (
+                  <div key={i} style={{ borderBottom: '1px dotted #aaa', padding: '5px 0 4px' }}>
+                    <div style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '3px' }}>{row.description}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
+                      <span style={{ ...colStyle(), fontWeight: 'normal' }}>{Number(row.qty)}</span>
+                      <span style={colStyle('right')}>{Number(row.amount).toFixed(2)}</span>
+                      <span style={{ ...colStyle('right'), fontWeight: 'bold' }}>
+                        {(Number(row.qty) * Number(row.amount)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  fontSize: '12pt', fontWeight: 'bold',
+                  borderTop: '2px solid #000', padding: '4px 0',
+                }}>
+                  <span>අතිරේක එකතුව:</span>
+                  <span>{billRowsTotal.toFixed(2)}</span>
+                </div>
               </>
             )}
 
             {/* Final balance */}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt', marginTop: '2mm' }}>
-              <tbody>
-                <tr style={{ fontWeight: 'bold', borderTop: '1px dashed #000', fontSize: '10pt' }}>
-                  <td style={{ textAlign: 'right', padding: '3px 1px' }}>අවසාන ශේෂය (රු.):</td>
-                  <td style={{ textAlign: 'right', padding: '3px 1px', width: '16mm' }}>{finalBalance.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div style={{
+              borderTop: '3px double #000', borderBottom: '3px double #000',
+              margin: '4mm 0', padding: '6px 0',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16pt', fontWeight: 'bold' }}>
+                <span>අවසාන ශේෂය (රු.):</span>
+                <span>{finalBalance.toFixed(2)}</span>
+              </div>
+            </div>
 
             {/* Footer */}
-            <div style={{ borderTop: '1px dashed #000', marginTop: '3mm', paddingTop: '2mm', textAlign: 'center', fontSize: '7pt', color: '#555' }}>
+            <div style={{ textAlign: 'center', fontSize: '10pt', color: '#555', paddingTop: '3mm', borderTop: '1px dashed #000' }}>
               <div>ජනනය: {new Date().toLocaleString('si-LK')}</div>
-              <div style={{ marginTop: '2px' }}>* * * ස්තුතියි * * *</div>
+              <div style={{ marginTop: '3px', fontSize: '13pt', fontWeight: 'bold', letterSpacing: '3px' }}>
+                * * * ස්තුතියි * * *
+              </div>
             </div>
           </div>
 
