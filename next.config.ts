@@ -1,5 +1,8 @@
+// next.config.ts
 import type { NextConfig } from "next";
+
 const nextConfig: NextConfig = {
-  basePath: '/tharoon-pos',
+  basePath: process.env.NODE_ENV === 'production' ? '/tharoon-pos' : '',
 };
+
 export default nextConfig;
