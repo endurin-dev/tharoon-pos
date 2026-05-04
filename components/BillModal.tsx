@@ -34,7 +34,7 @@ export default function BillModal({
   const handlePrint = () => window.print();
 
   const colStyle = (align: 'left' | 'center' | 'right' = 'center'): React.CSSProperties => ({
-    textAlign: align, padding: '0 2px', fontSize: '13pt',
+    textAlign: align, padding: '0 2px', fontSize: '10pt',
   });
 
   return (
@@ -59,14 +59,14 @@ export default function BillModal({
           <div id="bill-content" style={{
             width: '90mm', margin: '0 auto',
             fontFamily: "'Courier New', monospace",
-            fontSize: '11pt', color: '#000',
-            padding: '5mm 4mm', boxSizing: 'border-box',
+            fontSize: '10pt', color: '#000',
+            padding: '4mm 4mm', boxSizing: 'border-box',
           }}>
 
             {/* Header */}
-            <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '4mm', marginBottom: '4mm' }}>
-              <div style={{ fontSize: '20pt', fontWeight: 'bold', letterSpacing: '1px' }}>තරූන් බේකර්ස්</div>
-              <div style={{ fontSize: '13pt', marginTop: '2mm' }}>නිකුත් කිරීමේ රිසිට්පත</div>
+            <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '3mm', marginBottom: '3mm' }}>
+              <div style={{ fontSize: '17pt', fontWeight: 'bold', letterSpacing: '1px' }}>තරූන් බේකර්ස්</div>
+              <div style={{ fontSize: '11pt', marginTop: '1mm' }}>නිකුත් කිරීමේ රිසිට්පත</div>
             </div>
 
             {/* Session info */}
@@ -79,7 +79,7 @@ export default function BillModal({
             ].map(([label, value]) => (
               <div key={label} style={{
                 display: 'flex', justifyContent: 'space-between',
-                fontSize: '12pt', padding: '4px 0',
+                fontSize: '10.5pt', padding: '2px 0',
                 borderBottom: '1px dashed #ccc',
               }}>
                 <span style={{ fontWeight: 'bold' }}>{label}:</span>
@@ -87,27 +87,27 @@ export default function BillModal({
               </div>
             ))}
 
-            <div style={{ borderTop: '2px solid #000', margin: '4mm 0' }} />
+            <div style={{ borderTop: '2px solid #000', margin: '3mm 0' }} />
 
             {/* Items — column header */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
               borderTop: '2px solid #000', borderBottom: '1px solid #000',
-              padding: '4px 0', marginBottom: '2px',
+              padding: '3px 0', marginBottom: '1px',
             }}>
-              <span style={{ gridColumn: '1 / span 5', fontSize: '10pt', fontWeight: 'bold', marginBottom: '2px' }}>
+              <span style={{ gridColumn: '1 / span 5', fontSize: '9pt', fontWeight: 'bold', marginBottom: '1px' }}>
                 භාණ්ඩය
               </span>
               {['උදේ', 'සවස', 'ආප', 'විකි'].map(h => (
-                <span key={h} style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'center' }}>{h}</span>
+                <span key={h} style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center' }}>{h}</span>
               ))}
-              <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right' }}>රු.</span>
+              <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right' }}>රු.</span>
             </div>
 
             {/* Items — two-line rows */}
             {billItems.map((item, i) => (
-              <div key={i} style={{ borderBottom: '1px dotted #aaa', padding: '5px 0 4px' }}>
-                <div style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '3px' }}>{item.name}</div>
+              <div key={i} style={{ borderBottom: '1px dotted #aaa', padding: '3px 0 2px' }}>
+                <div style={{ fontSize: '11pt', fontWeight: 'bold', marginBottom: '1px' }}>{item.name}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', textAlign: 'center' }}>
                   <span style={colStyle()}>{item.morning_qty || '-'}</span>
                   <span style={colStyle()}>{item.evening_qty || '-'}</span>
@@ -119,11 +119,11 @@ export default function BillModal({
             ))}
 
             {/* Cost / Sell totals */}
-            <div style={{ borderTop: '2px solid #000', paddingTop: '4px', marginTop: '4px' }}>
+            <div style={{ borderTop: '2px solid #000', paddingTop: '3px', marginTop: '3px' }}>
               {[['පිරිවැය', grandCost], ['විකිණුම', grandSell]].map(([label, val]) => (
                 <div key={label as string} style={{
                   display: 'flex', justifyContent: 'space-between',
-                  fontSize: '12pt', fontWeight: 'bold', padding: '3px 0',
+                  fontSize: '11pt', fontWeight: 'bold', padding: '2px 0',
                 }}>
                   <span>{label as string}:</span>
                   <span>{(val as number).toFixed(2)}</span>
@@ -134,26 +134,26 @@ export default function BillModal({
             {/* Extra Bill Rows */}
             {billRows.length > 0 && (
               <>
-                <div style={{ borderTop: '2px dashed #000', margin: '4mm 0 3mm' }} />
-                <div style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '3mm' }}>අතිරේක:</div>
+                <div style={{ borderTop: '2px dashed #000', margin: '3mm 0 2mm' }} />
+                <div style={{ fontSize: '11pt', fontWeight: 'bold', marginBottom: '2mm' }}>අතිරේක:</div>
 
                 {/* Extra rows column header */}
                 <div style={{
                   display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
                   borderTop: '2px solid #000', borderBottom: '1px solid #000',
-                  padding: '4px 0', marginBottom: '2px',
+                  padding: '3px 0', marginBottom: '1px',
                 }}>
-                  <span style={{ gridColumn: '1 / span 3', fontSize: '10pt', fontWeight: 'bold', marginBottom: '2px' }}>
+                  <span style={{ gridColumn: '1 / span 3', fontSize: '9pt', fontWeight: 'bold', marginBottom: '1px' }}>
                     විස්තරය
                   </span>
-                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'center' }}>ගණ</span>
-                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right' }}>මිල</span>
-                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right' }}>එකතුව</span>
+                  <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center' }}>ගණ</span>
+                  <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right' }}>මිල</span>
+                  <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right' }}>එකතුව</span>
                 </div>
 
                 {billRows.map((row, i) => (
-                  <div key={i} style={{ borderBottom: '1px dotted #aaa', padding: '5px 0 4px' }}>
-                    <div style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '3px' }}>{row.description}</div>
+                  <div key={i} style={{ borderBottom: '1px dotted #aaa', padding: '3px 0 2px' }}>
+                    <div style={{ fontSize: '11pt', fontWeight: 'bold', marginBottom: '1px' }}>{row.description}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
                       <span style={{ ...colStyle(), fontWeight: 'normal' }}>{Number(row.qty)}</span>
                       <span style={colStyle('right')}>{Number(row.amount).toFixed(2)}</span>
@@ -166,8 +166,8 @@ export default function BillModal({
 
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',
-                  fontSize: '12pt', fontWeight: 'bold',
-                  borderTop: '2px solid #000', padding: '4px 0',
+                  fontSize: '11pt', fontWeight: 'bold',
+                  borderTop: '2px solid #000', padding: '3px 0',
                 }}>
                   <span>අතිරේක එකතුව:</span>
                   <span>{billRowsTotal.toFixed(2)}</span>
@@ -178,18 +178,18 @@ export default function BillModal({
             {/* Final balance */}
             <div style={{
               borderTop: '3px double #000', borderBottom: '3px double #000',
-              margin: '4mm 0', padding: '6px 0',
+              margin: '3mm 0', padding: '4px 0',
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16pt', fontWeight: 'bold' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14pt', fontWeight: 'bold' }}>
                 <span>අවසාන ශේෂය (රු.):</span>
                 <span>{finalBalance.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Footer */}
-            <div style={{ textAlign: 'center', fontSize: '10pt', color: '#555', paddingTop: '3mm', borderTop: '1px dashed #000' }}>
+            <div style={{ textAlign: 'center', fontSize: '9pt', color: '#555', paddingTop: '2mm', borderTop: '1px dashed #000' }}>
               <div>ජනනය: {new Date().toLocaleString('si-LK')}</div>
-              <div style={{ marginTop: '3px', fontSize: '13pt', fontWeight: 'bold', letterSpacing: '3px' }}>
+              <div style={{ marginTop: '2px', fontSize: '11pt', fontWeight: 'bold', letterSpacing: '3px' }}>
                 * * * ස්තුතියි * * *
               </div>
             </div>
