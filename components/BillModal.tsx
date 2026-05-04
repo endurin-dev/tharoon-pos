@@ -120,7 +120,7 @@ export default function BillModal({
 
             {/* Cost / Sell totals */}
             <div style={{ borderTop: '2px solid #000', paddingTop: '2px', marginTop: '2px' }}>
-              {[['පිරිවැය', grandCost], ['විකිණුම', grandSell]].map(([label, val]) => (
+              {[['විකිණුම(කොමිස්) ', grandCost], ['විකිණුම(පඩි)', grandSell]].map(([label, val]) => (
                 <div key={label as string} style={{
                   display: 'flex', justifyContent: 'space-between',
                   fontSize: '9pt', fontWeight: 'bold', padding: '1px 0',
@@ -168,7 +168,7 @@ export default function BillModal({
                   fontSize: '9pt', fontWeight: 'bold',
                   borderTop: '2px solid #000', padding: '2px 0',
                 }}>
-                  <span>අතිරේක එකතුව:</span>
+                  <span>අතිරේක:</span>
                   <span>{billRowsTotal.toFixed(2)}</span>
                 </div>
               </>
@@ -180,7 +180,7 @@ export default function BillModal({
               margin: '2mm 0', padding: '3px 0',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12pt', fontWeight: 'bold' }}>
-                <span>අවසාන ශේෂය (රු.):</span>
+                <span>කොමිස් මුදල (රු.):</span>
                 <span>{finalBalance.toFixed(2)}</span>
               </div>
             </div>
