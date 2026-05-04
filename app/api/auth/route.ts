@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Simple password check - password stored in env var ADMIN_PASSWORD
 // Falls back to "admin123" if not set (remind user to set it)
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest) 
+{
   try {
     const { password } = await req.json();
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
