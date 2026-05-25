@@ -55,6 +55,7 @@ export interface IssueItem {
   session_id: number;
   item_id: number;
   morning_qty: number;
+  morning_returned_qty: number;
   evening_qty: number;
   returned_qty: number;
   cost_price: number;
@@ -69,6 +70,7 @@ export interface CategoryWithItems extends Category {
 
 export interface ItemWithEntry extends Item {
   morning_qty: number;
+  morning_returned_qty: number;
   evening_qty: number;
   returned_qty: number;
   effective_cost: number;

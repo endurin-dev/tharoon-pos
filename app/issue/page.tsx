@@ -6,8 +6,6 @@ import BillModal from '@/components/BillModal';
 import SummaryModal from '@/components/SummaryModal';
 import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
 
-
-
 export default function HomePage() {
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
@@ -77,13 +75,16 @@ export default function HomePage() {
       }
 
       const savedMap = new Map<number, {
-        morning_qty: number; evening_qty: number; returned_qty: number;
-        cost_price: number; selling_price: number;
+        morning_qty: number; morning_returned_qty: number; evening_qty: number;
+        returned_qty: number; cost_price: number; selling_price: number;
       }>();
       for (const si of savedItems) {
         savedMap.set(si.item_id, {
-          morning_qty: si.morning_qty, evening_qty: si.evening_qty,
-          returned_qty: si.returned_qty, cost_price: Number(si.cost_price),
+          morning_qty: si.morning_qty,
+          morning_returned_qty: si.morning_returned_qty ?? 0,
+          evening_qty: si.evening_qty,
+          returned_qty: si.returned_qty,
+          cost_price: Number(si.cost_price),
           selling_price: Number(si.selling_price),
         });
       }
@@ -106,6 +107,7 @@ export default function HomePage() {
           cost_price: Number(row.cost_price), selling_price: Number(row.selling_price),
           is_active: row.is_active, sort_order: row.sort_order,
           morning_qty: saved?.morning_qty ?? 0,
+          morning_returned_qty: saved?.morning_returned_qty ?? 0,
           evening_qty: saved?.evening_qty ?? 0,
           returned_qty: saved?.returned_qty ?? 0,
           effective_cost: effectiveCost, effective_selling: effectiveSell,
@@ -117,7 +119,7 @@ export default function HomePage() {
   }, [selectedEmployee?.id, selectedDate]);
 
   const handleCategoryChange = useCallback(
-    (catId: number, itemId: number, field: 'morning_qty' | 'evening_qty' | 'returned_qty', val: number) => {
+    (catId: number, itemId: number, field: 'morning_qty' | 'morning_returned_qty' | 'evening_qty' | 'returned_qty', val: number) => {
       setCategories(prev => prev.map(cat =>
         cat.id !== catId ? cat : {
           ...cat,
@@ -158,13 +160,13 @@ export default function HomePage() {
 
   const grandTotalCost = categories.reduce((sum, cat) =>
     sum + cat.items.reduce((s, item) => {
-      const sold = Math.max(0, item.morning_qty + item.evening_qty - item.returned_qty);
+      const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
       return s + sold * item.effective_cost;
     }, 0), 0);
 
   const grandTotalSelling = categories.reduce((sum, cat) =>
     sum + cat.items.reduce((s, item) => {
-      const sold = Math.max(0, item.morning_qty + item.evening_qty - item.returned_qty);
+      const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
       return s + sold * item.effective_selling;
     }, 0), 0);
 
@@ -182,9 +184,12 @@ export default function HomePage() {
     items: categories.flatMap(cat =>
       cat.items.map(item => ({
         item_id: item.id,
-        morning_qty: item.morning_qty, evening_qty: item.evening_qty,
+        morning_qty: item.morning_qty,
+        morning_returned_qty: item.morning_returned_qty,
+        evening_qty: item.evening_qty,
         returned_qty: item.returned_qty,
-        cost_price: item.effective_cost, selling_price: item.effective_selling,
+        cost_price: item.effective_cost,
+        selling_price: item.effective_selling,
       }))
     ),
   });

@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
     const employeeId = searchParams.get('employee_id');
     const sessionId = searchParams.get('session_id');
 
-    // Get session with items
     if (sessionId) {
       const session = await queryOne('SELECT * FROM issue_sessions WHERE id=$1', [sessionId]);
       if (!session) return NextResponse.json({ session: null, items: [] });
@@ -27,7 +26,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ session, items });
     }
 
-    // Get session by date + employee
     if (date && employeeId) {
       const session = await queryOne(
         'SELECT * FROM issue_sessions WHERE session_date=$1 AND employee_id=$2',
@@ -49,7 +47,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ session, items });
     }
 
-    // List sessions
     const rows = await query(`
       SELECT s.*, e.name as employee_name, v.vehicle_number
       FROM issue_sessions s
@@ -71,7 +68,6 @@ export async function POST(req: NextRequest) {
     const { session, items } = await req.json();
     await client.query('BEGIN');
 
-    // Upsert session
     const existing = await client.query(
       'SELECT id FROM issue_sessions WHERE session_date=$1 AND employee_id=$2',
       [session.session_date, session.employee_id]
@@ -94,22 +90,31 @@ export async function POST(req: NextRequest) {
       sessionId = res.rows[0].id;
     }
 
-    // Upsert items
     for (const item of items) {
-      if (item.morning_qty === 0 && item.evening_qty === 0 && item.returned_qty === 0) continue;
+      if (
+        item.morning_qty === 0 && item.morning_returned_qty === 0 &&
+        item.evening_qty === 0 && item.returned_qty === 0
+      ) continue;
+
       await client.query(
-        `INSERT INTO issue_items (session_id, item_id, morning_qty, evening_qty, returned_qty, cost_price, selling_price)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `INSERT INTO issue_items
+           (session_id, item_id, morning_qty, morning_returned_qty, evening_qty, returned_qty, cost_price, selling_price)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
          ON CONFLICT (session_id, item_id) DO UPDATE SET
-           morning_qty=$3, evening_qty=$4, returned_qty=$5, cost_price=$6, selling_price=$7`,
-        [sessionId, item.item_id, item.morning_qty || 0, item.evening_qty || 0, item.returned_qty || 0, item.cost_price, item.selling_price]
+           morning_qty=$3, morning_returned_qty=$4, evening_qty=$5,
+           returned_qty=$6, cost_price=$7, selling_price=$8`,
+        [
+          sessionId, item.item_id,
+          item.morning_qty || 0, item.morning_returned_qty || 0,
+          item.evening_qty || 0, item.returned_qty || 0,
+          item.cost_price, item.selling_price,
+        ]
       );
     }
 
-    // Recalculate totals
     await client.query(`
       UPDATE issue_sessions s SET
-        total_cost = (SELECT COALESCE(SUM(total_cost),0) FROM issue_items WHERE session_id=s.id),
+        total_cost    = (SELECT COALESCE(SUM(total_cost),0)    FROM issue_items WHERE session_id=s.id),
         total_selling = (SELECT COALESCE(SUM(total_selling),0) FROM issue_items WHERE session_id=s.id)
       WHERE s.id=$1
     `, [sessionId]);

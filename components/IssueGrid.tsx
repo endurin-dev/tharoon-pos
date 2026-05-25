@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { CategoryWithItems, Employee, Vehicle , BillRow } from '@/lib/types';
+import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
 
 interface IssueGridProps {
   categories: CategoryWithItems[];
@@ -15,7 +15,7 @@ interface IssueGridProps {
   onDateChange: (d: string) => void;
   onEmployeeChange: (e: Employee | null) => void;
   onVehicleChange: (v: Vehicle | null) => void;
-  onCategoryChange: (catId: number, itemId: number, field: 'morning_qty' | 'evening_qty' | 'returned_qty', val: number) => void;
+  onCategoryChange: (catId: number, itemId: number, field: 'morning_qty' | 'morning_returned_qty' | 'evening_qty' | 'returned_qty', val: number) => void;
   onSave: () => void;
   onUpdate: () => void;
   onGetBill: () => void;
@@ -34,6 +34,8 @@ interface IssueGridProps {
   onDeleteBillRow: (id: number) => Promise<void>;
 }
 
+const COLS = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
+const COLS_MORNING = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
 const EMPTY_ROW = { description: '', qty: 1, amount: 0, sort_order: 0 };
 
 export default function IssueGrid({
@@ -52,11 +54,13 @@ export default function IssueGrid({
   const [editingRow, setEditingRow] = useState<BillRow | null>(null);
   const [savingRow, setSavingRow] = useState(false);
 
+  // morning-returned key uses a compound suffix to avoid colliding with "returned"
   useEffect(() => {
     const keys: string[] = [];
     for (const cat of categories) {
       for (const item of cat.items) {
         keys.push(`${item.id}-morning`);
+        keys.push(`${item.id}-morning-returned`);
         if (sessionType === 'full_day') keys.push(`${item.id}-evening`);
         keys.push(`${item.id}-returned`);
       }
@@ -77,8 +81,21 @@ export default function IssueGrid({
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>, currentKey: string) => {
     const order = inputOrder.current;
     const idx = order.indexOf(currentKey);
-    const currentField = currentKey.substring(currentKey.lastIndexOf('-') + 1);
-    const sameFieldKeys = order.filter(k => k.endsWith(`-${currentField}`));
+
+    // Derive the column suffix carefully — morning-returned must stay distinct from returned
+    const parts = currentKey.split('-');
+    const itemId = parts[0];
+    let colSuffix: string;
+    if (parts.length === 3) {
+      colSuffix = 'morning-returned';
+    } else {
+      colSuffix = parts[1];
+    }
+    const sameFieldKeys = order.filter(k => {
+      const kParts = k.split('-');
+      if (kParts.length === 3) return colSuffix === 'morning-returned';
+      return kParts[1] === colSuffix && kParts.length === 2;
+    });
     const fieldIdx = sameFieldKeys.indexOf(currentKey);
 
     if (e.key === 'Enter') {
@@ -89,8 +106,13 @@ export default function IssueGrid({
       } else {
         const nextInOrder = order[idx + 1];
         if (nextInOrder) {
-          const nextField = nextInOrder.substring(nextInOrder.lastIndexOf('-') + 1);
-          const nextColKeys = order.filter(k => k.endsWith(`-${nextField}`));
+          const nParts = nextInOrder.split('-');
+          const nextColSuffix = nParts.length === 3 ? 'morning-returned' : nParts[1];
+          const nextColKeys = order.filter(k => {
+            const kp = k.split('-');
+            if (kp.length === 3) return nextColSuffix === 'morning-returned';
+            return kp[1] === nextColSuffix && kp.length === 2;
+          });
           if (nextColKeys.length > 0) focusKey2(nextColKeys[0]);
         }
       }
@@ -134,6 +156,8 @@ export default function IssueGrid({
     setEditingRow({ ...row });
     setShowBillRows(true);
   };
+
+  const gridCols = sessionType === 'full_day' ? COLS : COLS_MORNING;
 
   return (
     <div className="flex flex-col h-full bg-[#0a0f1e] text-white font-mono">
@@ -195,14 +219,16 @@ export default function IssueGrid({
 
       {/* ── GRID HEADER ── */}
       <div className="bg-[#071020] border-b border-[#1e3a5f] sticky top-0 z-20">
-        <div className="grid text-[10px] font-bold uppercase tracking-widest text-[#4a9eff]" style={{
-          gridTemplateColumns: '160px 140px 80px 80px 80px 90px 90px 90px 90px'
-        }}>
+        <div className="grid text-[10px] font-bold uppercase tracking-widest text-[#4a9eff]"
+          style={{ gridTemplateColumns: gridCols }}>
           <div className="px-3 py-2 border-r border-[#1e3a5f]">වර්ගය</div>
           <div className="px-3 py-2 border-r border-[#1e3a5f]">භාණ්ඩය</div>
           <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">උදේ ප්‍රමාණ</div>
-          {sessionType === 'full_day' && <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">සවස ප්‍රමාණ</div>}
-          <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">ආපසු</div>
+          <div className="px-2 py-2 border-r border-[#1e3a5f] text-center text-[#f97316]">උදේ ආපසු</div>
+          {sessionType === 'full_day' && (
+            <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">සවස ප්‍රමාණ</div>
+          )}
+          <div className="px-2 py-2 border-r border-[#1e3a5f] text-center text-[#f97316]">ආපසු</div>
           <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">පිරිවැය</div>
           <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">විකිණුම</div>
           <div className="px-2 py-2 border-r border-[#1e3a5f] text-center">මුළු පිරිවැය</div>
@@ -215,27 +241,30 @@ export default function IssueGrid({
         {categories.map(cat => {
           let catCost = 0, catSell = 0;
           cat.items.forEach(item => {
-            const sold = Math.max(0, item.morning_qty + item.evening_qty - item.returned_qty);
+            const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
             catCost += sold * item.effective_cost;
             catSell += sold * item.effective_selling;
           });
           return (
             <div key={cat.id} className="border-b border-[#1e3a5f]">
               {cat.items.map((item, idx) => {
-                const sold = Math.max(0, item.morning_qty + item.evening_qty - item.returned_qty);
+                const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
                 const totalCost = sold * item.effective_cost;
                 const totalSell = sold * item.effective_selling;
                 const morningKey = `${item.id}-morning`;
+                const morningReturnedKey = `${item.id}-morning-returned`;
                 const eveningKey = `${item.id}-evening`;
                 const returnedKey = `${item.id}-returned`;
                 return (
                   <div key={item.id}
                     className="grid border-b border-[#0d1629] hover:bg-[#0d1a30] transition-colors"
-                    style={{ gridTemplateColumns: '160px 140px 80px 80px 80px 90px 90px 90px 90px' }}>
+                    style={{ gridTemplateColumns: gridCols }}>
                     <div className={`px-3 py-1.5 border-r border-[#1e3a5f] flex items-center ${idx === 0 ? 'text-[#fbbf24] font-bold text-xs' : ''}`}>
                       {idx === 0 ? cat.name : ''}
                     </div>
                     <div className="px-3 py-1.5 border-r border-[#1e3a5f] text-[#c8d8f0] text-xs flex items-center">{item.name}</div>
+
+                    {/* උදේ ප්‍රමාණ */}
                     <div className="border-r border-[#1e3a5f] flex items-center justify-center p-0.5">
                       <input ref={el => registerRef(morningKey, el)} type="number" min={0}
                         value={item.morning_qty || ''}
@@ -247,6 +276,21 @@ export default function IssueGrid({
                           [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                       />
                     </div>
+
+                    {/* උදේ ආපසු */}
+                    <div className="border-r border-[#1e3a5f] flex items-center justify-center p-0.5">
+                      <input ref={el => registerRef(morningReturnedKey, el)} type="number" min={0}
+                        value={item.morning_returned_qty || ''}
+                        onChange={e => onCategoryChange(cat.id, item.id, 'morning_returned_qty', Number(e.target.value) || 0)}
+                        onFocus={e => { e.target.select(); setFocusKey(morningReturnedKey); }}
+                        onKeyDown={e => handleKeyDown(e, morningReturnedKey)}
+                        className={`w-full h-full bg-transparent text-center text-sm outline-none border rounded px-1 py-0.5
+                          ${focusKey === morningReturnedKey ? 'border-[#f97316] bg-[#1a0d00] text-orange-300' : 'border-transparent text-[#f97316] hover:border-[#7a3a1a]'}
+                          [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                      />
+                    </div>
+
+                    {/* සවස ප්‍රමාණ */}
                     {sessionType === 'full_day' && (
                       <div className="border-r border-[#1e3a5f] flex items-center justify-center p-0.5">
                         <input ref={el => registerRef(eveningKey, el)} type="number" min={0}
@@ -260,6 +304,8 @@ export default function IssueGrid({
                         />
                       </div>
                     )}
+
+                    {/* ආපසු (සවස) */}
                     <div className="border-r border-[#1e3a5f] flex items-center justify-center p-0.5">
                       <input ref={el => registerRef(returnedKey, el)} type="number" min={0}
                         value={item.returned_qty || ''}
@@ -271,6 +317,7 @@ export default function IssueGrid({
                           [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                       />
                     </div>
+
                     <div className="border-r border-[#1e3a5f] flex items-center justify-end px-2 text-xs text-[#94a3b8]">
                       {item.effective_cost > 0 ? item.effective_cost.toFixed(2) : '-'}
                     </div>
@@ -287,11 +334,9 @@ export default function IssueGrid({
                 );
               })}
               {(catCost > 0 || catSell > 0) && (
-                <div className="grid bg-[#071420] text-[10px]" style={{
-                  gridTemplateColumns: '160px 140px 80px 80px 80px 90px 90px 90px 90px'
-                }}>
+                <div className="grid bg-[#071420] text-[10px]" style={{ gridTemplateColumns: gridCols }}>
                   <div className="px-3 py-1 text-right text-[#4a9eff] uppercase tracking-widest"
-                    style={{ gridColumn: sessionType === 'full_day' ? '1 / 8' : '1 / 7' }}>
+                    style={{ gridColumn: sessionType === 'full_day' ? '1 / 9' : '1 / 8' }}>
                     {cat.name} උප එකතුව
                   </div>
                   <div className="px-2 py-1 text-right text-[#fbbf24] border-l border-[#1e3a5f]">{catCost.toFixed(2)}</div>
@@ -367,9 +412,7 @@ export default function IssueGrid({
 
           {editingRow !== null ? (
             <div className="flex items-center gap-2 flex-wrap bg-[#0d1220] border border-[#2a1a4a] rounded-lg px-3 py-2">
-              <input
-                type="text"
-                placeholder="විස්තරය (eg: transport, extra charge...)"
+              <input type="text" placeholder="විස්තරය (eg: transport, extra charge...)"
                 value={editingRow.description}
                 onChange={e => setEditingRow(prev => prev ? { ...prev, description: e.target.value } : null)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveRow(); }}
