@@ -1,3 +1,15 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// IssueGrid.tsx  –  FIXED
+//
+// FIXES:
+//  1. Split single `amountRef` into `addAmountRef` + `editAmountRef` so the
+//     add-row and edit-row inputs never fight over the same ref.
+//  2. All Tab/Enter handlers in add-row now point to `addAmountRef`.
+//  3. All Tab/Enter handlers in edit-row now point to `editAmountRef`.
+//  4. Add-button disabled guard uses `newRow.amount === ''` instead of
+//     relying on a falsy check so "0" doesn't accidentally enable it wrong.
+// ─────────────────────────────────────────────────────────────────────────────
+
 'use client';
 
 import { useRef, useCallback, useEffect, useState } from 'react';
@@ -30,13 +42,17 @@ interface IssueGridProps {
   grandTotalSelling: number;
   billRows: BillRow[];
   billRowsTotal: number;
-  onSaveBillRow: (row: BillRow) => Promise<void>;
+  onSaveBillRow: (row: BillRow, overrideSessionId?: number) => Promise<void>;
   onDeleteBillRow: (id: number) => Promise<void>;
+  /** Called when no session exists yet; must save and return the new session_id */
+  onAutoSave: () => Promise<number | null>;
 }
 
-const COLS = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
-const COLS_MORNING = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
-const EMPTY_ROW = { description: '', qty: 1, amount: 0, sort_order: 0 };
+const COLS     = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
+const COLS_MRN = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
+
+// ── Blank add-row state ───────────────────────────────────────────────────────
+const BLANK = { description: '', amount: '' as string | number };
 
 export default function IssueGrid({
   categories, employees, vehicles, sessionType, selectedDate, selectedEmployee,
@@ -44,17 +60,14 @@ export default function IssueGrid({
   onCategoryChange, onSave, onUpdate, onGetBill, onSummary, isSaving,
   paymentStatus, onPaymentStatusChange, sessionExists, sessionId,
   finalBalance, grandTotalCost, grandTotalSelling,
-  billRows, billRowsTotal, onSaveBillRow, onDeleteBillRow,
+  billRows, billRowsTotal, onSaveBillRow, onDeleteBillRow, onAutoSave,
 }: IssueGridProps) {
-  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+
+  // ── grid keyboard nav ───────────────────────────────────────────────────────
+  const inputRefs  = useRef<Map<string, HTMLInputElement>>(new Map());
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const inputOrder = useRef<string[]>([]);
 
-  const [showBillRows, setShowBillRows] = useState(false);
-  const [editingRow, setEditingRow] = useState<BillRow | null>(null);
-  const [savingRow, setSavingRow] = useState(false);
-
-  // morning-returned key uses a compound suffix to avoid colliding with "returned"
   useEffect(() => {
     const keys: string[] = [];
     for (const cat of categories) {
@@ -69,8 +82,7 @@ export default function IssueGrid({
   }, [categories, sessionType]);
 
   const registerRef = useCallback((key: string, el: HTMLInputElement | null) => {
-    if (el) inputRefs.current.set(key, el);
-    else inputRefs.current.delete(key);
+    if (el) inputRefs.current.set(key, el); else inputRefs.current.delete(key);
   }, []);
 
   const focusKey2 = useCallback((key: string) => {
@@ -80,89 +92,89 @@ export default function IssueGrid({
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>, currentKey: string) => {
     const order = inputOrder.current;
-    const idx = order.indexOf(currentKey);
-
-    // Derive the column suffix carefully — morning-returned must stay distinct from returned
+    const idx   = order.indexOf(currentKey);
     const parts = currentKey.split('-');
-    const itemId = parts[0];
-    let colSuffix: string;
-    if (parts.length === 3) {
-      colSuffix = 'morning-returned';
-    } else {
-      colSuffix = parts[1];
-    }
+    const colSuffix = parts.length === 3 ? 'morning-returned' : parts[1];
+
     const sameFieldKeys = order.filter(k => {
-      const kParts = k.split('-');
-      if (kParts.length === 3) return colSuffix === 'morning-returned';
-      return kParts[1] === colSuffix && kParts.length === 2;
+      const kp = k.split('-');
+      return kp.length === 3 ? colSuffix === 'morning-returned' : kp[1] === colSuffix && kp.length === 2;
     });
     const fieldIdx = sameFieldKeys.indexOf(currentKey);
 
     if (e.key === 'Enter') {
       e.preventDefault();
       const nextKey = sameFieldKeys[fieldIdx + 1];
-      if (nextKey) {
-        focusKey2(nextKey);
-      } else {
-        const nextInOrder = order[idx + 1];
-        if (nextInOrder) {
-          const nParts = nextInOrder.split('-');
-          const nextColSuffix = nParts.length === 3 ? 'morning-returned' : nParts[1];
-          const nextColKeys = order.filter(k => {
-            const kp = k.split('-');
-            if (kp.length === 3) return nextColSuffix === 'morning-returned';
-            return kp[1] === nextColSuffix && kp.length === 2;
-          });
-          if (nextColKeys.length > 0) focusKey2(nextColKeys[0]);
-        }
+      if (nextKey) { focusKey2(nextKey); return; }
+      const nextInOrder = order[idx + 1];
+      if (nextInOrder) {
+        const np = nextInOrder.split('-');
+        const nextCol = np.length === 3 ? 'morning-returned' : np[1];
+        const nextColKeys = order.filter(k => {
+          const kp = k.split('-');
+          return kp.length === 3 ? nextCol === 'morning-returned' : kp[1] === nextCol && kp.length === 2;
+        });
+        if (nextColKeys.length > 0) focusKey2(nextColKeys[0]);
       }
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      const next = order[idx + 1];
-      if (next) focusKey2(next);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextKey = sameFieldKeys[fieldIdx + 1];
-      if (nextKey) focusKey2(nextKey);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prevKey = sameFieldKeys[fieldIdx - 1];
-      if (prevKey) focusKey2(prevKey);
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      const next = order[idx + 1];
-      if (next) focusKey2(next);
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      const prev = order[idx - 1];
-      if (prev) focusKey2(prev);
-    }
+    } else if (e.key === 'Tab')        { e.preventDefault(); const n = order[idx + 1]; if (n) focusKey2(n); }
+    else if (e.key === 'ArrowDown')    { e.preventDefault(); const n = sameFieldKeys[fieldIdx + 1]; if (n) focusKey2(n); }
+    else if (e.key === 'ArrowUp')      { e.preventDefault(); const n = sameFieldKeys[fieldIdx - 1]; if (n) focusKey2(n); }
+    else if (e.key === 'ArrowRight')   { e.preventDefault(); const n = order[idx + 1]; if (n) focusKey2(n); }
+    else if (e.key === 'ArrowLeft')    { e.preventDefault(); const n = order[idx - 1]; if (n) focusKey2(n); }
   }, [focusKey2]);
 
-  const startNewRow = () => {
-    setEditingRow({ ...EMPTY_ROW, sort_order: billRows.length });
-    setShowBillRows(true);
+  // ── add-row state ───────────────────────────────────────────────────────────
+  const [showExtra,  setShowExtra]  = useState(false);
+  const [newRow,     setNewRow]     = useState(BLANK);
+  const [saving,     setSaving]     = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [editRow,    setEditRow]    = useState<BillRow | null>(null);
+
+  // ── FIX: two separate refs, one per input context ──────────────────────────
+  const descRef       = useRef<HTMLInputElement>(null);
+  const addAmountRef  = useRef<HTMLInputElement>(null);   // add-row amount
+  const editAmountRef = useRef<HTMLInputElement>(null);   // edit-row amount
+
+  const resetNew = () => { setNewRow(BLANK); descRef.current?.focus(); };
+
+  const handleAddRow = async () => {
+    if (!newRow.description.trim() || newRow.amount === '' || Number(newRow.amount) === 0) return;
+
+    let sid = sessionId;
+
+    // No session yet → auto-save silently first
+    if (!sid) {
+      setAutoSaving(true);
+      sid = await onAutoSave();
+      setAutoSaving(false);
+      if (!sid) return; // save failed — onAutoSave shows its own toast
+    }
+
+    setSaving(true);
+    await onSaveBillRow({
+      description: newRow.description.trim(),
+      qty: 1,
+      amount: Number(newRow.amount),
+      sort_order: billRows.length,
+    }, sid);
+    setSaving(false);
+    resetNew();
   };
 
-  const handleSaveRow = async () => {
-    if (!editingRow || !editingRow.description.trim()) return;
-    setSavingRow(true);
-    await onSaveBillRow(editingRow);
-    setSavingRow(false);
-    setEditingRow(null);
+  const handleUpdateRow = async () => {
+    if (!editRow || !editRow.description.trim()) return;
+    setSaving(true);
+    await onSaveBillRow({ ...editRow, qty: 1 });
+    setSaving(false);
+    setEditRow(null);
   };
 
-  const handleEditExisting = (row: BillRow) => {
-    setEditingRow({ ...row });
-    setShowBillRows(true);
-  };
-
-  const gridCols = sessionType === 'full_day' ? COLS : COLS_MORNING;
+  const gridCols = sessionType === 'full_day' ? COLS : COLS_MRN;
 
   return (
     <div className="flex flex-col h-full bg-[#0a0f1e] text-white font-mono">
 
-      {/* ── TOP CONTROLS ── */}
+      {/* ── TOP CONTROLS ──────────────────────────────────────────────────── */}
       <div className="bg-[#0d1629] border-b border-[#1e3a5f] px-4 py-2 flex flex-wrap items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-[#4a9eff] font-semibold uppercase tracking-widest text-xs">දිනය</span>
@@ -217,7 +229,7 @@ export default function IssueGrid({
         </div>
       </div>
 
-      {/* ── GRID HEADER ── */}
+      {/* ── GRID HEADER ───────────────────────────────────────────────────── */}
       <div className="bg-[#071020] border-b border-[#1e3a5f] sticky top-0 z-20">
         <div className="grid text-[10px] font-bold uppercase tracking-widest text-[#4a9eff]"
           style={{ gridTemplateColumns: gridCols }}>
@@ -236,7 +248,7 @@ export default function IssueGrid({
         </div>
       </div>
 
-      {/* ── GRID BODY ── */}
+      {/* ── GRID BODY ─────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto">
         {categories.map(cat => {
           let catCost = 0, catSell = 0;
@@ -248,13 +260,13 @@ export default function IssueGrid({
           return (
             <div key={cat.id} className="border-b border-[#1e3a5f]">
               {cat.items.map((item, idx) => {
-                const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
+                const sold      = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
                 const totalCost = sold * item.effective_cost;
                 const totalSell = sold * item.effective_selling;
-                const morningKey = `${item.id}-morning`;
+                const morningKey         = `${item.id}-morning`;
                 const morningReturnedKey = `${item.id}-morning-returned`;
-                const eveningKey = `${item.id}-evening`;
-                const returnedKey = `${item.id}-returned`;
+                const eveningKey         = `${item.id}-evening`;
+                const returnedKey        = `${item.id}-returned`;
                 return (
                   <div key={item.id}
                     className="grid border-b border-[#0d1629] hover:bg-[#0d1a30] transition-colors"
@@ -305,7 +317,7 @@ export default function IssueGrid({
                       </div>
                     )}
 
-                    {/* ආපසු (සවස) */}
+                    {/* ආපසු */}
                     <div className="border-r border-[#1e3a5f] flex items-center justify-center p-0.5">
                       <input ref={el => registerRef(returnedKey, el)} type="number" min={0}
                         value={item.returned_qty || ''}
@@ -348,120 +360,162 @@ export default function IssueGrid({
         })}
       </div>
 
-      {/* ── EXTRA BILL ROWS PANEL ── */}
-      {showBillRows && (
-        <div className="bg-[#0a0d1a] border-t-2 border-[#2a1a4a] px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-[#a78bfa] text-xs uppercase tracking-widest font-semibold">➕ අතිරේක බිල් පේළි</span>
-              <span className="text-[#64748b] text-xs">(බිලේ දිස්වේ, ශේෂයට ඇතුළත් වේ)</span>
-            </div>
-            {!sessionId && (
-              <span className="text-[#ef4444] text-xs animate-pulse">⚠ පළමුව සැසිය සුරකින්න</span>
+      {/* ══════════════════════════════════════════════════════════════════════
+          ── EXTRA BILL ROWS  (collapsible, navy-matched theme) ─────────────
+         ══════════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#0a0d1f] border-t border-[#1e2a4a]">
+
+        {/* ── Collapse / expand header bar ── */}
+        <button
+          onClick={() => setShowExtra(p => !p)}
+          className="w-full flex items-center justify-between px-4 py-2 hover:bg-[#0d1220] transition-colors group"
+        >
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] transition-transform duration-200 text-[#a78bfa] ${showExtra ? 'rotate-90' : ''}`}>▶</span>
+            <span className="text-[#a78bfa] text-[10px] uppercase tracking-widest font-semibold">
+              අතිරේක ගාස්තු
+            </span>
+            {billRows.length > 0 && (
+              <span className="bg-[#2a1a4a] text-[#a78bfa] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {billRows.length}
+              </span>
+            )}
+            {billRowsTotal !== 0 && (
+              <span className="text-[#64748b] text-[10px]">· රු. {billRowsTotal.toFixed(2)}</span>
             )}
           </div>
+          {!sessionId && (
+            <span className="text-[#64748b] text-[10px]">(සුරැකීමේදී ස්වයංක්‍රීයව)</span>
+          )}
+        </button>
 
-          {billRows.length > 0 && (
-            <div className="mb-3 rounded-lg border border-[#2a1a4a] overflow-hidden">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-[#0d0a1e] text-[#a78bfa] uppercase tracking-widest text-[10px]">
-                    <th className="text-left px-3 py-2 border-r border-[#2a1a4a]">විස්තරය</th>
-                    <th className="text-center px-2 py-2 border-r border-[#2a1a4a] w-16">ගණන</th>
-                    <th className="text-right px-2 py-2 border-r border-[#2a1a4a] w-24">මිල (රු.)</th>
-                    <th className="text-right px-2 py-2 border-r border-[#2a1a4a] w-24">එකතුව</th>
-                    <th className="w-28 px-2 py-2 text-center">ක්‍රියා</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {billRows.map((row, i) => (
-                    <tr key={row.id ?? i} className={`border-t border-[#1a1030] ${i % 2 === 0 ? 'bg-[#0a0f1e]' : 'bg-[#0d0a20]'}`}>
-                      <td className="px-3 py-1.5 text-[#c8d8f0] border-r border-[#1a1030]">{row.description}</td>
-                      <td className="px-2 py-1.5 text-center text-[#94a3b8] border-r border-[#1a1030]">{Number(row.qty)}</td>
-                      <td className="px-2 py-1.5 text-right text-[#94a3b8] border-r border-[#1a1030]">{Number(row.amount).toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-right font-semibold text-[#22c55e] border-r border-[#1a1030]">
-                        {(Number(row.qty) * Number(row.amount)).toFixed(2)}
-                      </td>
-                      <td className="px-2 py-1.5 text-center">
-                        <div className="flex gap-1 justify-center">
-                          <button onClick={() => handleEditExisting(row)}
-                            className="px-2 py-0.5 bg-[#1e3a5f] hover:bg-[#2a4f7a] text-[#4a9eff] rounded text-[10px] transition-colors">
-                            සංස්කරණය
+        {/* ── Collapsible body ── */}
+        {showExtra && (
+          <div className="px-4 pb-3 border-t border-[#151e35]">
+
+            {/* Existing rows table */}
+            {billRows.length > 0 && (
+              <div className="mt-2 mb-2 rounded border border-[#1e2a4a] overflow-hidden">
+                <div className="grid grid-cols-[1fr_110px_64px] bg-[#080d1c] text-[#3a5070] text-[10px] uppercase tracking-widest px-3 py-1.5 border-b border-[#1e2a4a] font-semibold">
+                  <span>විස්තරය</span>
+                  <span className="text-right">මුදල (රු.)</span>
+                  <span />
+                </div>
+
+                {billRows.map((row, i) => (
+                  <div key={row.id ?? i}>
+                    {editRow?.id === row.id ? (
+                      /* ── inline edit ── */
+                      <div className="grid grid-cols-[1fr_110px_64px] gap-1.5 px-3 py-1.5 bg-[#0d1530] border-b border-[#1e2a4a] items-center">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={editRow.description}
+                          onChange={e => setEditRow(r => r ? { ...r, description: e.target.value } : null)}
+                          onKeyDown={e => {
+                            if (e.key === 'Tab')    { e.preventDefault(); editAmountRef.current?.focus(); }
+                            if (e.key === 'Enter')  { e.preventDefault(); editAmountRef.current?.focus(); }
+                            if (e.key === 'Escape') setEditRow(null);
+                          }}
+                          className="bg-[#071020] border border-[#a78bfa] text-[#c8d8f0] px-2 py-1 rounded text-xs outline-none"
+                        />
+                        {/* FIX: use editAmountRef here, NOT addAmountRef */}
+                        <input
+                          ref={editAmountRef}
+                          type="number" min={0} step="0.01"
+                          value={editRow.amount}
+                          onChange={e => setEditRow(r => r ? { ...r, amount: Number(e.target.value) || 0 } : null)}
+                          onFocus={e => e.target.select()}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter')  handleUpdateRow();
+                            if (e.key === 'Escape') setEditRow(null);
+                          }}
+                          className="bg-[#071020] border border-[#a78bfa] text-[#22c55e] font-bold px-2 py-1 rounded text-xs outline-none text-right
+                            [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <div className="flex gap-1 justify-end">
+                          <button onClick={handleUpdateRow} disabled={saving}
+                            className="px-2 py-0.5 bg-[#0d3a1e] hover:bg-[#1a5a2e] text-[#22c55e] border border-[#1a5a2e] rounded text-[10px] transition-colors disabled:opacity-40">
+                            {saving ? '…' : '✓'}
                           </button>
-                          <button onClick={() => row.id && onDeleteBillRow(row.id)}
-                            className="px-2 py-0.5 bg-[#3a1e1e] hover:bg-[#5a2a2a] text-[#ef4444] rounded text-[10px] transition-colors">
-                            ඉවත්
+                          <button onClick={() => setEditRow(null)}
+                            className="px-2 py-0.5 bg-[#1e1a3a] hover:bg-[#2a2456] text-[#a78bfa] border border-[#2a2456] rounded text-[10px] transition-colors">
+                            ✕
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="border-t-2 border-[#2a1a4a] bg-[#0d0a1e]">
-                    <td colSpan={3} className="px-3 py-1.5 text-right text-[#a78bfa] text-[10px] uppercase tracking-widest font-bold border-r border-[#1a1030]">
-                      අතිරේක මුළු එකතුව
-                    </td>
-                    <td className="px-2 py-1.5 text-right font-bold text-[#22c55e] border-r border-[#1a1030]">
-                      රු. {billRowsTotal.toFixed(2)}
-                    </td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
+                      </div>
+                    ) : (
+                      /* ── display row ── */
+                      <div className={`grid grid-cols-[1fr_110px_64px] px-3 py-1.5 border-b border-[#0d1420] items-center group transition-colors
+                        ${i % 2 === 0 ? 'bg-[#090c1c]' : 'bg-[#0b0f20]'} hover:bg-[#0d1530]`}>
+                        <span className="text-[#8aa0c0] text-xs truncate">{row.description}</span>
+                        <span className="text-right text-[#22c55e] text-xs font-semibold">
+                          රු. {Number(row.amount).toFixed(2)}
+                        </span>
+                        <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => setEditRow({ ...row })}
+                            className="px-1.5 py-0.5 bg-[#1e3a5f] hover:bg-[#2a4f7a] text-[#4a9eff] rounded text-[10px]">✎</button>
+                          <button onClick={() => row.id && onDeleteBillRow(row.id)}
+                            className="px-1.5 py-0.5 bg-[#3a1e1e] hover:bg-[#5a2a2a] text-[#ef4444] rounded text-[10px]">✕</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
 
-          {editingRow !== null ? (
-            <div className="flex items-center gap-2 flex-wrap bg-[#0d1220] border border-[#2a1a4a] rounded-lg px-3 py-2">
-              <input type="text" placeholder="විස්තරය (eg: transport, extra charge...)"
-                value={editingRow.description}
-                onChange={e => setEditingRow(prev => prev ? { ...prev, description: e.target.value } : null)}
-                onKeyDown={e => { if (e.key === 'Enter') handleSaveRow(); }}
-                className="flex-1 min-w-[200px] bg-[#071020] border border-[#2a1a4a] focus:border-[#a78bfa] text-white px-3 py-1.5 rounded text-sm outline-none placeholder-[#3a4a6a]"
+                {/* sub-total */}
+                {billRowsTotal !== 0 && (
+                  <div className="grid grid-cols-[1fr_110px_64px] px-3 py-1.5 bg-[#0d0a1e] border-t border-[#2a1a4a]">
+                    <span className="text-[#a78bfa] text-[10px] uppercase tracking-widest font-bold">එකතුව</span>
+                    <span className="text-right text-[#a78bfa] text-xs font-bold">රු. {billRowsTotal.toFixed(2)}</span>
+                    <span />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Add row ── always enabled; auto-saves session if needed */}
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                ref={descRef}
+                type="text"
+                placeholder="විස්තරය..."
+                value={newRow.description}
+                onChange={e => setNewRow(r => ({ ...r, description: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key === 'Tab')   { e.preventDefault(); addAmountRef.current?.focus(); }
+                  if (e.key === 'Enter') { e.preventDefault(); addAmountRef.current?.focus(); }
+                }}
+                className="flex-1 bg-[#071020] border border-[#1e2a4a] focus:border-[#a78bfa] text-[#c8d8f0] px-3 py-1.5 rounded text-xs outline-none placeholder-[#2e3f5a] transition-colors"
               />
-              <div className="flex items-center gap-1.5">
-                <span className="text-[#64748b] text-xs whitespace-nowrap">ගණන:</span>
-                <input type="number" min={0} step="0.01" value={editingRow.qty}
-                  onChange={e => setEditingRow(prev => prev ? { ...prev, qty: Number(e.target.value) || 0 } : null)}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[#3a5070] text-[10px] whitespace-nowrap">රු.</span>
+                {/* FIX: use addAmountRef here, NOT editAmountRef */}
+                <input
+                  ref={addAmountRef}
+                  type="number" min={0} step="0.01"
+                  placeholder="0.00"
+                  value={newRow.amount === '' ? '' : newRow.amount}
+                  onChange={e => setNewRow(r => ({ ...r, amount: e.target.value }))}
                   onFocus={e => e.target.select()}
-                  className="w-20 bg-[#071020] border border-[#2a1a4a] focus:border-[#a78bfa] text-white px-2 py-1.5 rounded text-sm outline-none text-center
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddRow(); }}
+                  className="w-28 bg-[#071020] border border-[#1e2a4a] focus:border-[#a78bfa] text-[#22c55e] font-semibold px-2 py-1.5 rounded text-xs outline-none text-right placeholder-[#2e3f5a] transition-colors
                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[#64748b] text-xs whitespace-nowrap">මිල (රු.):</span>
-                <input type="number" min={0} step="0.01" value={editingRow.amount}
-                  onChange={e => setEditingRow(prev => prev ? { ...prev, amount: Number(e.target.value) || 0 } : null)}
-                  onFocus={e => e.target.select()}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveRow(); }}
-                  className="w-28 bg-[#071020] border border-[#2a1a4a] focus:border-[#a78bfa] text-[#22c55e] font-semibold px-2 py-1.5 rounded text-sm outline-none text-right
-                    [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-              {Number(editingRow.qty) > 0 && Number(editingRow.amount) > 0 && (
-                <span className="text-[#22c55e] text-sm font-bold">
-                  = රු. {(Number(editingRow.qty) * Number(editingRow.amount)).toFixed(2)}
-                </span>
-              )}
-              <button onClick={handleSaveRow}
-                disabled={savingRow || !editingRow.description.trim() || !sessionId}
-                className="px-4 py-1.5 bg-[#0d3a1e] hover:bg-[#1a5a2e] disabled:opacity-40 text-[#22c55e] rounded text-sm font-semibold transition-colors">
-                {savingRow ? '...' : '✓ සුරකින්න'}
-              </button>
-              <button onClick={() => setEditingRow(null)}
-                className="px-3 py-1.5 bg-[#1e1a3a] hover:bg-[#2a2456] text-[#a78bfa] rounded text-sm transition-colors">
-                අවලංගු
+              <button
+                onClick={handleAddRow}
+                disabled={saving || autoSaving || !newRow.description.trim() || newRow.amount === '' || Number(newRow.amount) === 0}
+                className="px-3 py-1.5 bg-[#0d3a1e] hover:bg-[#1a5a2e] disabled:opacity-40 text-[#22c55e] border border-[#1a5a2e] rounded text-xs font-semibold transition-colors whitespace-nowrap min-w-[72px] text-center">
+                {autoSaving ? '⏳ සුරකිමින්...' : saving ? '…' : '+ එකතු'}
               </button>
             </div>
-          ) : (
-            <button onClick={startNewRow}
-              className="flex items-center gap-2 px-4 py-2 bg-[#1a1030] hover:bg-[#2a1a4a] border border-dashed border-[#3a2a5a] hover:border-[#a78bfa] text-[#a78bfa] rounded-lg text-sm transition-all">
-              ＋ නව පේළියක් එකතු කරන්න
-            </button>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+      {/* ══════════════════════════════════════════════════════════════════════ */}
 
-      {/* ── FOOTER ── */}
+      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <div className="bg-[#071020] border-t-2 border-[#1e3a5f] px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex gap-2 flex-wrap">
@@ -483,14 +537,6 @@ export default function IssueGrid({
             <button onClick={onSummary}
               className="px-5 py-2 bg-[#1e1a3a] hover:bg-[#2a2456] text-[#a78bfa] text-sm font-bold rounded border border-[#2a2456] transition-all uppercase tracking-wider">
               📊 සාරාංශය
-            </button>
-            <button onClick={() => setShowBillRows(p => !p)}
-              className={`px-5 py-2 text-sm font-bold rounded border transition-all uppercase tracking-wider ${
-                showBillRows
-                  ? 'bg-[#1a1030] border-[#a78bfa] text-[#a78bfa]'
-                  : 'bg-[#0d0a1e] border-[#2a2456] text-[#64748b] hover:text-[#a78bfa] hover:border-[#a78bfa]'
-              }`}>
-              {billRows.length > 0 ? `➕✓ අතිරේක (${billRows.length})` : '➕ අතිරේක'}
             </button>
           </div>
 

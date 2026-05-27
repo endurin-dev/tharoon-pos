@@ -129,12 +129,57 @@ export default function HomePage() {
     }, []
   );
 
-  const handleSaveBillRow = async (row: BillRow) => {
-    if (!sessionId) return showToast('පළමුව සැසිය සුරකින්න', 'error');
+  const buildPayload = () => ({
+    session: {
+      session_date: selectedDate,
+      employee_id: selectedEmployee!.id,
+      vehicle_id: selectedVehicle?.id || null,
+      session_type: sessionType,
+      payment_status: paymentStatus,
+    },
+    items: categories.flatMap(cat =>
+      cat.items.map(item => ({
+        item_id: item.id,
+        morning_qty: item.morning_qty,
+        morning_returned_qty: item.morning_returned_qty,
+        evening_qty: item.evening_qty,
+        returned_qty: item.returned_qty,
+        cost_price: item.effective_cost,
+        selling_price: item.effective_selling,
+      }))
+    ),
+  });
+
+  // ── saves normally and returns the new session_id ──────────────────────────
+  const handleAutoSave = async (): Promise<number | null> => {
+    if (!selectedEmployee) {
+      showToast('සේවකයෙකු තෝරන්න', 'error');
+      return null;
+    }
+    const res = await fetch('/api/issues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload()),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setSessionExists(true);
+      const id: number | null = data.session_id ?? null;
+      if (id) setSessionId(id);
+      showToast('සැසිය ස්වයංක්‍රීයව සුරකිණි');
+      return id;
+    }
+    showToast(data.error || 'ස්වයංක්‍රීය සුරැකීම අසාර්ථකයි', 'error');
+    return null;
+  };
+
+  const handleSaveBillRow = async (row: BillRow, overrideSessionId?: number) => {
+    const sid = overrideSessionId ?? sessionId;
+    if (!sid) return showToast('පළමුව සැසිය සුරකින්න', 'error');
     const res = await fetch('/api/bill-rows', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...row, session_id: sessionId }),
+      body: JSON.stringify({ ...row, session_id: sid }),
     });
     if (res.ok) {
       const saved = await res.json();
@@ -172,27 +217,6 @@ export default function HomePage() {
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
   const finalBalance = grandTotalSelling - grandTotalCost + billRowsTotal;
-
-  const buildPayload = () => ({
-    session: {
-      session_date: selectedDate,
-      employee_id: selectedEmployee!.id,
-      vehicle_id: selectedVehicle?.id || null,
-      session_type: sessionType,
-      payment_status: paymentStatus,
-    },
-    items: categories.flatMap(cat =>
-      cat.items.map(item => ({
-        item_id: item.id,
-        morning_qty: item.morning_qty,
-        morning_returned_qty: item.morning_returned_qty,
-        evening_qty: item.evening_qty,
-        returned_qty: item.returned_qty,
-        cost_price: item.effective_cost,
-        selling_price: item.effective_selling,
-      }))
-    ),
-  });
 
   const handleSave = async () => {
     if (!selectedEmployee) return showToast('සේවකයෙකු තෝරන්න', 'error');
@@ -265,6 +289,7 @@ export default function HomePage() {
           billRowsTotal={billRowsTotal}
           onSaveBillRow={handleSaveBillRow}
           onDeleteBillRow={handleDeleteBillRow}
+          onAutoSave={handleAutoSave}
         />
       </div>
 
