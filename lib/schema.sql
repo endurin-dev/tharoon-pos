@@ -73,6 +73,17 @@ CREATE TABLE IF NOT EXISTS issue_items (
   UNIQUE(session_id, item_id)
 );
 
+CREATE TABLE IF NOT EXISTS issue_bill_rows (
+  id SERIAL PRIMARY KEY,
+  session_id INT NOT NULL REFERENCES issue_sessions(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  qty INT NOT NULL DEFAULT 1,
+  amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- බීජ දත්ත (සිංහල)
 INSERT INTO categories (name, sort_order) VALUES
   ('පාන්', 1),

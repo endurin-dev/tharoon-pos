@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
     await client.query('COMMIT');
 
     const updatedSession = await queryOne('SELECT * FROM issue_sessions WHERE id=$1', [sessionId]);
-    return NextResponse.json({ success: true, session: updatedSession });
+    return NextResponse.json({ success: true, session: updatedSession, session_id: sessionId });
   } catch (e: any) {
     await client.query('ROLLBACK');
     return NextResponse.json({ error: e.message }, { status: 500 });

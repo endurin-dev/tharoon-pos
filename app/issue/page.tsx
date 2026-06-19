@@ -164,7 +164,7 @@ export default function HomePage() {
     const data = await res.json();
     if (data.success) {
       setSessionExists(true);
-      const id: number | null = data.session_id ?? null;
+      const id: number | null = data.session_id ?? data.session?.id ?? null;
       if (id) setSessionId(id);
       showToast('සැසිය ස්වයංක්‍රීයව සුරකිණි');
       return id;
@@ -229,7 +229,8 @@ export default function HomePage() {
     setIsSaving(false);
     if (data.success) {
       setSessionExists(true);
-      if (data.session_id) setSessionId(data.session_id);
+      const id: number | null = data.session_id ?? data.session?.id ?? null;
+      if (id) setSessionId(id);
       showToast('සැසිය සාර්ථකව සුරකිණි!');
     } else showToast(data.error || 'සුරැකීම අසාර්ථකයි', 'error');
   };
