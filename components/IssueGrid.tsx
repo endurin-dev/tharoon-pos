@@ -408,13 +408,13 @@ export default function IssueGrid({
 
                 {billRows.map((row, i) => (
                   <div key={row.id ?? i}>
-                    {editRow?.id === row.id ? (
+                    {editRow && editRow.id === row.id ? (
                       /* ── inline edit ── */
                       <div className="grid grid-cols-[1fr_110px_64px] gap-1.5 px-3 py-1.5 bg-[#220a0a] border-b border-[#7f1d1d] items-center">
                         <input
                           autoFocus
                           type="text"
-                          value={editRow.description}
+                          value={editRow!.description}
                           onChange={e => setEditRow(r => r ? { ...r, description: e.target.value } : null)}
                           onKeyDown={e => {
                             if (e.key === 'Tab')    { e.preventDefault(); editAmountRef.current?.focus(); }
@@ -427,7 +427,7 @@ export default function IssueGrid({
                         <input
                           ref={editAmountRef}
                           type="number" min={0} step="0.01"
-                          value={editRow.amount}
+                          value={editRow!.amount}
                           onChange={e => setEditRow(r => r ? { ...r, amount: Number(e.target.value) || 0 } : null)}
                           onFocus={e => e.target.select()}
                           onKeyDown={e => {
