@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// IssueGrid.tsx  –  FIXED
+// IssueGrid.tsx  –  FIXED + RESTYLED EXTRA CHARGES
 //
 // FIXES:
 //  1. Split single `amountRef` into `addAmountRef` + `editAmountRef` so the
@@ -8,6 +8,10 @@
 //  3. All Tab/Enter handlers in edit-row now point to `editAmountRef`.
 //  4. Add-button disabled guard uses `newRow.amount === ''` instead of
 //     relying on a falsy check so "0" doesn't accidentally enable it wrong.
+//
+// RESTYLED:
+//  5. Extra charges section uses a distinct amber/dark-amber theme so it
+//     visually separates from the navy grid above it.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
@@ -361,42 +365,42 @@ export default function IssueGrid({
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          ── EXTRA BILL ROWS  (collapsible, navy-matched theme) ─────────────
+          ── EXTRA BILL ROWS  (collapsible, distinct amber theme) ──────────
          ══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#0a0d1f] border-t border-[#1e2a4a]">
+      <div className="bg-[#1a0a0a] border-t-2 border-[#dc2626]">
 
         {/* ── Collapse / expand header bar ── */}
         <button
           onClick={() => setShowExtra(p => !p)}
-          className="w-full flex items-center justify-between px-4 py-2 hover:bg-[#0d1220] transition-colors group"
+          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#220a0a] transition-colors group"
         >
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] transition-transform duration-200 text-[#a78bfa] ${showExtra ? 'rotate-90' : ''}`}>▶</span>
-            <span className="text-[#a78bfa] text-[10px] uppercase tracking-widest font-semibold">
+            <span className={`text-[10px] transition-transform duration-200 text-[#fbbf24] ${showExtra ? 'rotate-90' : ''}`}>▶</span>
+            <span className="text-[#f87171] text-[10px] uppercase tracking-widest font-bold">
               අතිරේක ගාස්තු
             </span>
             {billRows.length > 0 && (
-              <span className="bg-[#2a1a4a] text-[#a78bfa] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="bg-[#7f1d1d] text-[#fca5a5] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {billRows.length}
               </span>
             )}
             {billRowsTotal !== 0 && (
-              <span className="text-[#64748b] text-[10px]">· රු. {billRowsTotal.toFixed(2)}</span>
+              <span className="text-[#f87171] text-[10px] font-semibold">· රු. {billRowsTotal.toFixed(2)}</span>
             )}
           </div>
           {!sessionId && (
-            <span className="text-[#64748b] text-[10px]">(සුරැකීමේදී ස්වයංක්‍රීයව)</span>
+            <span className="text-[#991b1b] text-[10px]">(සුරැකීමේදී ස්වයංක්‍රීයව)</span>
           )}
         </button>
 
         {/* ── Collapsible body ── */}
         {showExtra && (
-          <div className="px-4 pb-3 border-t border-[#151e35]">
+          <div className="px-4 pb-3 border-t border-[#7f1d1d]">
 
             {/* Existing rows table */}
             {billRows.length > 0 && (
-              <div className="mt-2 mb-2 rounded border border-[#1e2a4a] overflow-hidden">
-                <div className="grid grid-cols-[1fr_110px_64px] bg-[#080d1c] text-[#3a5070] text-[10px] uppercase tracking-widest px-3 py-1.5 border-b border-[#1e2a4a] font-semibold">
+              <div className="mt-2 mb-2 rounded border border-[#991b1b] overflow-hidden">
+                <div className="grid grid-cols-[1fr_110px_64px] bg-[#0f0505] text-[#f87171] text-[10px] uppercase tracking-widest px-3 py-1.5 border-b border-[#7f1d1d] font-bold">
                   <span>විස්තරය</span>
                   <span className="text-right">මුදල (රු.)</span>
                   <span />
@@ -406,7 +410,7 @@ export default function IssueGrid({
                   <div key={row.id ?? i}>
                     {editRow?.id === row.id ? (
                       /* ── inline edit ── */
-                      <div className="grid grid-cols-[1fr_110px_64px] gap-1.5 px-3 py-1.5 bg-[#0d1530] border-b border-[#1e2a4a] items-center">
+                      <div className="grid grid-cols-[1fr_110px_64px] gap-1.5 px-3 py-1.5 bg-[#220a0a] border-b border-[#7f1d1d] items-center">
                         <input
                           autoFocus
                           type="text"
@@ -417,7 +421,7 @@ export default function IssueGrid({
                             if (e.key === 'Enter')  { e.preventDefault(); editAmountRef.current?.focus(); }
                             if (e.key === 'Escape') setEditRow(null);
                           }}
-                          className="bg-[#071020] border border-[#a78bfa] text-[#c8d8f0] px-2 py-1 rounded text-xs outline-none"
+                          className="bg-[#0f0900] border border-[#dc2626] text-[#fde68a] px-2 py-1 rounded text-xs outline-none"
                         />
                         {/* FIX: use editAmountRef here, NOT addAmountRef */}
                         <input
@@ -430,7 +434,7 @@ export default function IssueGrid({
                             if (e.key === 'Enter')  handleUpdateRow();
                             if (e.key === 'Escape') setEditRow(null);
                           }}
-                          className="bg-[#071020] border border-[#a78bfa] text-[#22c55e] font-bold px-2 py-1 rounded text-xs outline-none text-right
+                          className="bg-[#0f0900] border border-[#dc2626] text-[#fbbf24] font-bold px-2 py-1 rounded text-xs outline-none text-right
                             [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <div className="flex gap-1 justify-end">
@@ -439,22 +443,22 @@ export default function IssueGrid({
                             {saving ? '…' : '✓'}
                           </button>
                           <button onClick={() => setEditRow(null)}
-                            className="px-2 py-0.5 bg-[#1e1a3a] hover:bg-[#2a2456] text-[#a78bfa] border border-[#2a2456] rounded text-[10px] transition-colors">
+                            className="px-2 py-0.5 bg-[#3a1e00] hover:bg-[#5a3000] text-[#fbbf24] border border-[#7f1d1d] rounded text-[10px] transition-colors">
                             ✕
                           </button>
                         </div>
                       </div>
                     ) : (
                       /* ── display row ── */
-                      <div className={`grid grid-cols-[1fr_110px_64px] px-3 py-1.5 border-b border-[#0d1420] items-center group transition-colors
-                        ${i % 2 === 0 ? 'bg-[#090c1c]' : 'bg-[#0b0f20]'} hover:bg-[#0d1530]`}>
-                        <span className="text-[#8aa0c0] text-xs truncate">{row.description}</span>
-                        <span className="text-right text-[#22c55e] text-xs font-semibold">
+                      <div className={`grid grid-cols-[1fr_110px_64px] px-3 py-1.5 border-b border-[#2a0a0a] items-center group transition-colors
+                        ${i % 2 === 0 ? 'bg-[#130505]' : 'bg-[#1a0a0a]'} hover:bg-[#260e0e]`}>
+                        <span className="text-[#fca5a5] text-xs truncate">{row.description}</span>
+                        <span className="text-right text-[#fbbf24] text-xs font-semibold">
                           රු. {Number(row.amount).toFixed(2)}
                         </span>
                         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setEditRow({ ...row })}
-                            className="px-1.5 py-0.5 bg-[#1e3a5f] hover:bg-[#2a4f7a] text-[#4a9eff] rounded text-[10px]">✎</button>
+                            className="px-1.5 py-0.5 bg-[#3a2800] hover:bg-[#5a3e00] text-[#fbbf24] border border-[#7f1d1d] rounded text-[10px]">✎</button>
                           <button onClick={() => row.id && onDeleteBillRow(row.id)}
                             className="px-1.5 py-0.5 bg-[#3a1e1e] hover:bg-[#5a2a2a] text-[#ef4444] rounded text-[10px]">✕</button>
                         </div>
@@ -465,9 +469,9 @@ export default function IssueGrid({
 
                 {/* sub-total */}
                 {billRowsTotal !== 0 && (
-                  <div className="grid grid-cols-[1fr_110px_64px] px-3 py-1.5 bg-[#0d0a1e] border-t border-[#2a1a4a]">
-                    <span className="text-[#a78bfa] text-[10px] uppercase tracking-widest font-bold">එකතුව</span>
-                    <span className="text-right text-[#a78bfa] text-xs font-bold">රු. {billRowsTotal.toFixed(2)}</span>
+                  <div className="grid grid-cols-[1fr_110px_64px] px-3 py-1.5 bg-[#0f0900] border-t border-[#7f1d1d]">
+                    <span className="text-[#f87171] text-[10px] uppercase tracking-widest font-bold">එකතුව</span>
+                    <span className="text-right text-[#f87171] text-xs font-bold">රු. {billRowsTotal.toFixed(2)}</span>
                     <span />
                   </div>
                 )}
@@ -486,10 +490,10 @@ export default function IssueGrid({
                   if (e.key === 'Tab')   { e.preventDefault(); addAmountRef.current?.focus(); }
                   if (e.key === 'Enter') { e.preventDefault(); addAmountRef.current?.focus(); }
                 }}
-                className="flex-1 bg-[#071020] border border-[#1e2a4a] focus:border-[#a78bfa] text-[#c8d8f0] px-3 py-1.5 rounded text-xs outline-none placeholder-[#2e3f5a] transition-colors"
+                className="flex-1 bg-[#0f0900] border border-[#7f1d1d] focus:border-[#dc2626] text-[#fde68a] px-3 py-1.5 rounded text-xs outline-none placeholder-[#5a1010] transition-colors"
               />
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[#3a5070] text-[10px] whitespace-nowrap">රු.</span>
+                <span className="text-[#f87171] text-[10px] whitespace-nowrap font-semibold">රු.</span>
                 {/* FIX: use addAmountRef here, NOT editAmountRef */}
                 <input
                   ref={addAmountRef}
@@ -499,14 +503,14 @@ export default function IssueGrid({
                   onChange={e => setNewRow(r => ({ ...r, amount: e.target.value }))}
                   onFocus={e => e.target.select()}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddRow(); }}
-                  className="w-28 bg-[#071020] border border-[#1e2a4a] focus:border-[#a78bfa] text-[#22c55e] font-semibold px-2 py-1.5 rounded text-xs outline-none text-right placeholder-[#2e3f5a] transition-colors
+                  className="w-28 bg-[#0f0900] border border-[#7f1d1d] focus:border-[#dc2626] text-[#fbbf24] font-semibold px-2 py-1.5 rounded text-xs outline-none text-right placeholder-[#5a1010] transition-colors
                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
               <button
                 onClick={handleAddRow}
                 disabled={saving || autoSaving || !newRow.description.trim() || newRow.amount === '' || Number(newRow.amount) === 0}
-                className="px-3 py-1.5 bg-[#0d3a1e] hover:bg-[#1a5a2e] disabled:opacity-40 text-[#22c55e] border border-[#1a5a2e] rounded text-xs font-semibold transition-colors whitespace-nowrap min-w-[72px] text-center">
+                className="px-3 py-1.5 bg-[#7f1d1d] hover:bg-[#991b1b] disabled:opacity-40 text-[#fbbf24] border border-[#991b1b] rounded text-xs font-bold transition-colors whitespace-nowrap min-w-[72px] text-center">
                 {autoSaving ? '⏳ සුරකිමින්...' : saving ? '…' : '+ එකතු'}
               </button>
             </div>
@@ -552,7 +556,7 @@ export default function IssueGrid({
             {billRowsTotal !== 0 && (
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-[#4a9eff] mb-0.5">අතිරේක</div>
-                <div className="text-lg font-bold text-[#a78bfa] font-mono">රු. {billRowsTotal.toFixed(2)}</div>
+                <div className="text-lg font-bold text-[#fbbf24] font-mono">රු. {billRowsTotal.toFixed(2)}</div>
               </div>
             )}
             <div className="border-l border-[#1e3a5f] pl-5">
