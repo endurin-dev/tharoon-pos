@@ -1,17 +1,38 @@
 // ─────────────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
 // IssueGrid.tsx  –  FIXED + RESTYLED EXTRA CHARGES
 //
 // FIXES:
+=======
+// IssueGrid.tsx  –  FIXED + RESTYLED EXTRA CHARGES + SOURCE SELECTOR
+//
+// PREVIOUS FIXES:
+>>>>>>> 2a5a00f (bill update)
 //  1. Split single `amountRef` into `addAmountRef` + `editAmountRef` so the
 //     add-row and edit-row inputs never fight over the same ref.
 //  2. All Tab/Enter handlers in add-row now point to `addAmountRef`.
 //  3. All Tab/Enter handlers in edit-row now point to `editAmountRef`.
 //  4. Add-button disabled guard uses `newRow.amount === ''` instead of
 //     relying on a falsy check so "0" doesn't accidentally enable it wrong.
+<<<<<<< HEAD
 //
 // RESTYLED:
 //  5. Extra charges section uses a distinct amber/dark-amber theme so it
 //     visually separates from the navy grid above it.
+=======
+//  5. Extra charges section uses a distinct amber/dark-amber theme so it
+//     visually separates from the navy grid above it.
+//
+// NEW:
+//  6. Extra charges no longer blindly sum/min into the final balance.
+//     A radio toggle — "විකුනුම් මුදලින්" (from sale total) vs
+//     "කොමිස් මුදලින්" (from commission/profit total, DEFAULT) — controls
+//     which total the extras are deducted from. The actual math lives in
+//     page.tsx (finalBalance); this component only renders the selector
+//     and reports the choice up via onExtraSourceChange.
+//  7. Selector is placed directly above the "add extra charge" row so it's
+//     obvious which total a new extra will affect.
+>>>>>>> 2a5a00f (bill update)
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
@@ -50,6 +71,12 @@ interface IssueGridProps {
   onDeleteBillRow: (id: number) => Promise<void>;
   /** Called when no session exists yet; must save and return the new session_id */
   onAutoSave: () => Promise<number | null>;
+<<<<<<< HEAD
+=======
+  /** NEW: which total extra charges are deducted from */
+  extraSource: 'sale' | 'commission';
+  onExtraSourceChange: (s: 'sale' | 'commission') => void;
+>>>>>>> 2a5a00f (bill update)
 }
 
 const COLS     = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px';
@@ -65,6 +92,10 @@ export default function IssueGrid({
   paymentStatus, onPaymentStatusChange, sessionExists, sessionId,
   finalBalance, grandTotalCost, grandTotalSelling,
   billRows, billRowsTotal, onSaveBillRow, onDeleteBillRow, onAutoSave,
+<<<<<<< HEAD
+=======
+  extraSource, onExtraSourceChange,
+>>>>>>> 2a5a00f (bill update)
 }: IssueGridProps) {
 
   // ── grid keyboard nav ───────────────────────────────────────────────────────
@@ -134,7 +165,11 @@ export default function IssueGrid({
   const [autoSaving, setAutoSaving] = useState(false);
   const [editRow,    setEditRow]    = useState<BillRow | null>(null);
 
+<<<<<<< HEAD
   // ── FIX: two separate refs, one per input context ──────────────────────────
+=======
+  // ── two separate refs, one per input context ──────────────────────────────
+>>>>>>> 2a5a00f (bill update)
   const descRef       = useRef<HTMLInputElement>(null);
   const addAmountRef  = useRef<HTMLInputElement>(null);   // add-row amount
   const editAmountRef = useRef<HTMLInputElement>(null);   // edit-row amount
@@ -387,6 +422,14 @@ export default function IssueGrid({
             {billRowsTotal !== 0 && (
               <span className="text-[#f87171] text-[10px] font-semibold">· රු. {billRowsTotal.toFixed(2)}</span>
             )}
+<<<<<<< HEAD
+=======
+            {billRowsTotal !== 0 && (
+              <span className="text-[#7f9cbf] text-[10px]">
+                ({extraSource === 'sale' ? 'විකිණුමෙන් අඩුවේ' : 'පිරිවැයට එකතුවේ'})
+              </span>
+            )}
+>>>>>>> 2a5a00f (bill update)
           </div>
           {!sessionId && (
             <span className="text-[#991b1b] text-[10px]">(සුරැකීමේදී ස්වයංක්‍රීයව)</span>
@@ -423,7 +466,11 @@ export default function IssueGrid({
                           }}
                           className="bg-[#0f0900] border border-[#dc2626] text-[#fde68a] px-2 py-1 rounded text-xs outline-none"
                         />
+<<<<<<< HEAD
                         {/* FIX: use editAmountRef here, NOT addAmountRef */}
+=======
+                        {/* use editAmountRef here, NOT addAmountRef */}
+>>>>>>> 2a5a00f (bill update)
                         <input
                           ref={editAmountRef}
                           type="number" min={0} step="0.01"
@@ -478,6 +525,36 @@ export default function IssueGrid({
               </div>
             )}
 
+<<<<<<< HEAD
+=======
+            {/* ── NEW: source selector — placed right above the add-row form ── */}
+            <div className="flex items-center gap-4 mb-2 px-1 py-1.5 bg-[#0f0505] border border-[#7f1d1d] rounded">
+              <span className="text-[#f87171] text-[10px] uppercase tracking-widest font-bold whitespace-nowrap">
+                අඩු කරන්නේ:
+              </span>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="extraSource"
+                  checked={extraSource === 'commission'}
+                  onChange={() => onExtraSourceChange('commission')}
+                  className="accent-[#dc2626]"
+                />
+                <span className="text-[#fca5a5] text-xs">කොමිස් මුදලින්</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="extraSource"
+                  checked={extraSource === 'sale'}
+                  onChange={() => onExtraSourceChange('sale')}
+                  className="accent-[#dc2626]"
+                />
+                <span className="text-[#fca5a5] text-xs">විකුනුම් මුදලින්</span>
+              </label>
+            </div>
+
+>>>>>>> 2a5a00f (bill update)
             {/* ── Add row ── always enabled; auto-saves session if needed */}
             <div className="flex items-center gap-2 mt-1">
               <input
@@ -494,7 +571,11 @@ export default function IssueGrid({
               />
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="text-[#f87171] text-[10px] whitespace-nowrap font-semibold">රු.</span>
+<<<<<<< HEAD
                 {/* FIX: use addAmountRef here, NOT editAmountRef */}
+=======
+                {/* use addAmountRef here, NOT editAmountRef */}
+>>>>>>> 2a5a00f (bill update)
                 <input
                   ref={addAmountRef}
                   type="number" min={0} step="0.01"
@@ -544,6 +625,7 @@ export default function IssueGrid({
             </button>
           </div>
 
+<<<<<<< HEAD
           <div className="flex items-end gap-5 text-right">
             <div>
               <div className="text-[10px] uppercase tracking-widest text-[#4a9eff] mb-0.5">මුළු පිරිවැය</div>
@@ -559,6 +641,40 @@ export default function IssueGrid({
                 <div className="text-lg font-bold text-[#fbbf24] font-mono">රු. {billRowsTotal.toFixed(2)}</div>
               </div>
             )}
+=======
+          {/*
+            Extras are folded directly into ONE base total — never shown as
+            a separate deduction from commission:
+              extraSource === 'commission' (default) → extras ADD onto
+                මුළු පිරිවැය (cost); මුළු විකිණුම stays as-is
+              extraSource === 'sale' → extras come OFF මුළු විකිණුම (selling);
+                මුළු පිරිවැය stays as-is
+            This must mirror BillModal.tsx's adjustedCost/adjustedSell exactly.
+          */}
+          <div className="flex items-end gap-5 text-right">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-[#4a9eff] mb-0.5">
+                මුළු පිරිවැය
+                {extraSource === 'commission' && billRowsTotal !== 0 && (
+                  <span className="text-[#f87171]"> (+අතිරේක)</span>
+                )}
+              </div>
+              <div className="text-lg font-bold text-[#fbbf24] font-mono">
+                රු. {(extraSource === 'commission' ? grandTotalCost + billRowsTotal : grandTotalCost).toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-[#4a9eff] mb-0.5">
+                මුළු විකිණුම
+                {extraSource === 'sale' && billRowsTotal !== 0 && (
+                  <span className="text-[#f87171]"> (−අතිරේක)</span>
+                )}
+              </div>
+              <div className="text-lg font-bold text-[#22c55e] font-mono">
+                රු. {(extraSource === 'sale' ? grandTotalSelling - billRowsTotal : grandTotalSelling).toFixed(2)}
+              </div>
+            </div>
+>>>>>>> 2a5a00f (bill update)
             <div className="border-l border-[#1e3a5f] pl-5">
               <div className="text-[10px] uppercase tracking-widest text-[#4a9eff] mb-0.5">අවසාන ශේෂය</div>
               <div className={`text-2xl font-bold font-mono ${finalBalance >= 0 ? 'text-[#38bdf8]' : 'text-[#ef4444]'}`}>
