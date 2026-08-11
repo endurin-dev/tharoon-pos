@@ -10,27 +10,18 @@ interface BillModalProps {
   sessionType: string;
   paymentStatus: string;
   billRows?: BillRow[];
-<<<<<<< HEAD
-=======
   /** Which total extra charges are folded into — must match page.tsx */
   extraSource: 'sale' | 'commission';
->>>>>>> 2a5a00f (bill update)
   onClose: () => void;
 }
 
 export default function BillModal({
   categories, employee, vehicle, date, sessionType, paymentStatus,
-<<<<<<< HEAD
-  billRows = [], onClose,
-}: BillModalProps) {
-  let grandCost = 0, grandSell = 0;
-=======
   billRows = [], extraSource, onClose,
 }: BillModalProps) {
   let grandCost = 0, grandSell = 0;
   let morningReturnedQty = 0, morningReturnedCost = 0;
   let eveningReturnedQty = 0, eveningReturnedCost = 0;
->>>>>>> 2a5a00f (bill update)
   const billItems = categories.flatMap(cat =>
     cat.items.filter(i => i.morning_qty > 0 || i.evening_qty > 0).map(item => {
       const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
@@ -38,23 +29,16 @@ export default function BillModal({
       const sell = sold * item.effective_selling;
       grandCost += cost;
       grandSell += sell;
-<<<<<<< HEAD
-=======
       // ── NEW: track return quantities and their cost value ──────────────
       morningReturnedQty += item.morning_returned_qty;
       morningReturnedCost += item.morning_returned_qty * item.effective_cost;
       eveningReturnedQty += item.returned_qty;
       eveningReturnedCost += item.returned_qty * item.effective_cost;
->>>>>>> 2a5a00f (bill update)
       return { ...item, sold, cost, sell };
     })
   );
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
-<<<<<<< HEAD
-  const commission = grandSell - grandCost;
-  const finalBalance = commission + billRowsTotal;
-=======
 
   // ── UPDATED: extras are folded directly into ONE base line, not shown as
   // a separate deduction from commission. This must mirror page.tsx exactly.
@@ -70,7 +54,6 @@ export default function BillModal({
   const adjustedSell = extraSource === 'sale' ? grandSell - billRowsTotal : grandSell;
   const finalBalance = adjustedSell - adjustedCost;
 
->>>>>>> 2a5a00f (bill update)
   const handlePrint = () => window.print();
 
   // 7 qty cols + 2 amount cols (cost + sell)
@@ -95,19 +78,6 @@ export default function BillModal({
     borderLeft: first ? 'none' : '1px solid #ccc',
   });
 
-<<<<<<< HEAD
-  const totalRow = (label: string, value: number, highlight = false): React.ReactElement => (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between',
-      fontSize: highlight ? '10pt' : '9pt',
-      fontWeight: 'bold',
-      padding: '1px 2px',
-      background: highlight ? '#f0f0f0' : 'transparent',
-      borderBottom: '1px dashed #ccc',
-    }}>
-      <span>{label}</span>
-      <span>රු. {Math.round(value)}</span>
-=======
   // ── Clear, large-number summary box for පිරිවැය / විකිණුම ──────────────────
   const bigTotalBox = (
     label: string,
@@ -181,7 +151,6 @@ export default function BillModal({
       }}>
         රු. {Math.round(costValue)}
       </div>
->>>>>>> 2a5a00f (bill update)
     </div>
   );
 
@@ -189,20 +158,12 @@ export default function BillModal({
     <>
       <style>{`
         @media print {
-<<<<<<< HEAD
-          @page { size: 72mm auto; margin: 0; }
-=======
           @page { size: 80mm auto; margin: 0; }
->>>>>>> 2a5a00f (bill update)
           body * { visibility: hidden; }
           #bill-content, #bill-content * { visibility: visible; }
           #bill-content {
             position: fixed; top: 0; left: 0;
-<<<<<<< HEAD
-            width: 68mm; padding: 2mm 3mm;
-=======
             width: 76mm; padding: 2mm 3mm;
->>>>>>> 2a5a00f (bill update)
             border: none !important; box-shadow: none !important;
           }
           .no-print { display: none !important; }
@@ -213,11 +174,7 @@ export default function BillModal({
         <div className="bg-white text-black rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
           <div id="bill-content" style={{
-<<<<<<< HEAD
-            width: '68mm', margin: '0 auto',
-=======
             width: '76mm', margin: '0 auto',
->>>>>>> 2a5a00f (bill update)
             fontFamily: "'Courier New', monospace",
             fontSize: '8pt', color: '#000',
             padding: '3mm 3mm', boxSizing: 'border-box',
@@ -303,11 +260,7 @@ export default function BillModal({
             {/* ── TOTALS SECTION ── */}
             <div style={{ borderTop: '2px solid #000', marginTop: '1px', paddingTop: '2px' }}>
 
-<<<<<<< HEAD
-              {/* Qty totals grid */}
-=======
               {/* Qty totals grid — raw, unadjusted sums straight from items */}
->>>>>>> 2a5a00f (bill update)
               <div style={{
                 display: 'grid', gridTemplateColumns: cols,
                 borderLeft: '1px solid #ccc', borderRight: '1px solid #ccc',
@@ -334,16 +287,6 @@ export default function BillModal({
                 </span>
               </div>
 
-<<<<<<< HEAD
-              {/* Individual total rows */}
-              <div style={{
-                marginTop: '2px',
-                fontWeight: 700,
-                fontFamily: 'Arial Black, Arial, sans-serif',
-              }}>
-                {totalRow('පිරිවැය (කොමිස්)', grandCost)}
-                {totalRow('විකිණුම (පඩි)', grandSell)}
-=======
               {/* Return totals — quantity + cost value, only shown if any
                   returns exist for this session */}
               {(morningReturnedQty > 0 || eveningReturnedQty > 0) && (
@@ -368,7 +311,6 @@ export default function BillModal({
                   '#15803d',
                   extraSource === 'sale' && billRowsTotal !== 0 ? `−අතිරේක ${Math.round(billRowsTotal)}` : undefined
                 )}
->>>>>>> 2a5a00f (bill update)
               </div>
             </div>
 
@@ -376,13 +318,9 @@ export default function BillModal({
             {billRows.length > 0 && (
               <>
                 <div style={{ borderTop: '2px dashed #000', margin: '1.5mm 0 1mm' }} />
-<<<<<<< HEAD
-                <div style={{ fontSize: '9pt', fontWeight: 'bold', marginBottom: '1mm' }}>අතිරේක:</div>
-=======
                 <div style={{ fontSize: '9pt', fontWeight: 'bold', marginBottom: '1mm' }}>
                   අතිරේක ({extraSource === 'sale' ? 'විකිණුම (පඩි) වෙතින්' : 'පිරිවැය (කොමිස්) වෙතට'}):
                 </div>
->>>>>>> 2a5a00f (bill update)
 
                 <div style={{
                   display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
@@ -424,55 +362,6 @@ export default function BillModal({
               </>
             )}
 
-<<<<<<< HEAD
-            {/* ── FINAL BALANCE ── */}
-            <div style={{
-              borderTop: '3px double #000', borderBottom: '3px double #000',
-              margin: '1.5mm 0', padding: '2px 0',
-            }}>
-
-              {/* කොමිස් මුදල = grandSell - grandCost */}
-              <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                fontSize: '9pt', fontWeight: 700,
-                fontFamily: 'Arial Black, Arial, sans-serif',
-                padding: '2px 3px',
-                borderBottom: billRowsTotal !== 0 ? '1px dashed #999' : 'none',
-              }}>
-                <span>කොමිස් මුදල (රු.):</span>
-                <span>{Math.round(commission)}</span>
-              </div>
-
-              {/* අතිරේක line — only if extras exist */}
-              {billRowsTotal !== 0 && (
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  fontSize: '9pt', fontWeight: 'bold',
-                  padding: '2px 3px',
-                  color: billRowsTotal >= 0 ? '#007700' : '#c00',
-                  borderBottom: '1px dashed #999',
-                }}>
-                  <span>{billRowsTotal >= 0 ? '＋' : '−'} අතිරේක මුළු (රු.):</span>
-                  <span>{billRowsTotal >= 0 ? '+' : '-'}{Math.round(Math.abs(billRowsTotal))}</span>
-                </div>
-              )}
-
-              {/* අවසාන කොමිස් — only shown when extras exist */}
-              {billRowsTotal !== 0 && (
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  fontSize: '11pt', fontWeight: 700,
-                  fontFamily: 'Arial Black, Arial, sans-serif',
-                  borderTop: '2px solid #000',
-                  marginTop: '2px',
-                  padding: '3px',
-                  background: '#f0f0f0',
-                }}>
-                  <span>අවසාන කොමිස් (රු.):</span>
-                  <span>{Math.round(finalBalance)}</span>
-                </div>
-              )}
-=======
             {/* ── FINAL BALANCE ──────────────────────────────────────────────
                 Extras are already folded into adjustedCost or adjustedSell
                 above — this is simply adjustedSell − adjustedCost. No extra
@@ -499,7 +388,6 @@ export default function BillModal({
               }}>
                 {Math.round(finalBalance)}
               </div>
->>>>>>> 2a5a00f (bill update)
             </div>
 
             {/* ── FOOTER ── */}

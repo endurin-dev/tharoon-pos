@@ -27,14 +27,11 @@ export default function HomePage() {
 
   const [billRows, setBillRows] = useState<BillRow[]>([]);
 
-<<<<<<< HEAD
-=======
   // ── NEW: which total extra charges are deducted from ──────────────────────
   // 'commission' = deduct from (selling - cost) → this is the DEFAULT
   // 'sale'       = deduct from selling total before computing profit
   const [extraSource, setExtraSource] = useState<'sale' | 'commission'>('commission');
 
->>>>>>> 2a5a00f (bill update)
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
@@ -82,13 +79,10 @@ export default function HomePage() {
         setBillRows([]);
       }
 
-<<<<<<< HEAD
-=======
       // NEW: always reset the extra-charges source back to the default
       // ("කොමිස් මුදලින්") whenever a session (or blank slate) is loaded.
       setExtraSource('commission');
 
->>>>>>> 2a5a00f (bill update)
       const savedMap = new Map<number, {
         morning_qty: number; morning_returned_qty: number; evening_qty: number;
         returned_qty: number; cost_price: number; selling_price: number;
@@ -231,9 +225,6 @@ export default function HomePage() {
     }, 0), 0);
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
-<<<<<<< HEAD
-  const finalBalance = grandTotalSelling - grandTotalCost + billRowsTotal;
-=======
 
   // ── UPDATED BALANCE LOGIC ───────────────────────────────────────────────
   // Extra charges (billRowsTotal) are folded directly into exactly ONE base
@@ -259,7 +250,6 @@ export default function HomePage() {
     : grandTotalSelling;
 
   const finalBalance = adjustedTotalSelling - adjustedTotalCost;
->>>>>>> 2a5a00f (bill update)
 
   const handleSave = async () => {
     if (!selectedEmployee) return showToast('සේවකයෙකු තෝරන්න', 'error');
@@ -334,11 +324,8 @@ export default function HomePage() {
           onSaveBillRow={handleSaveBillRow}
           onDeleteBillRow={handleDeleteBillRow}
           onAutoSave={handleAutoSave}
-<<<<<<< HEAD
-=======
           extraSource={extraSource}
           onExtraSourceChange={setExtraSource}
->>>>>>> 2a5a00f (bill update)
         />
       </div>
 
@@ -359,10 +346,7 @@ export default function HomePage() {
           sessionType={sessionType}
           paymentStatus={paymentStatus}
           billRows={billRows}
-<<<<<<< HEAD
-=======
           extraSource={extraSource}
->>>>>>> 2a5a00f (bill update)
           onClose={() => setShowBill(false)}
         />
       )}
