@@ -29,7 +29,7 @@ export default function BillModal({
       const sell = sold * item.effective_selling;
       grandCost += cost;
       grandSell += sell;
-      // ── NEW: track return quantities and their cost value ──────────────
+      // ── track return quantities and their cost value ────────────────────
       morningReturnedQty += item.morning_returned_qty;
       morningReturnedCost += item.morning_returned_qty * item.effective_cost;
       eveningReturnedQty += item.returned_qty;
@@ -40,18 +40,21 @@ export default function BillModal({
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
 
-  // ── UPDATED: extras are folded directly into ONE base line, not shown as
-  // a separate deduction from commission. This must mirror page.tsx exactly.
+  // ── Extras are folded directly into ONE base line, not shown as a
+  // separate deduction from commission. This must mirror page.tsx exactly.
   //
   // extraSource === 'commission' (DEFAULT):
   //   extras add on top of පිරිවැය (කොමිස්) — i.e. adjustedCost = cost + extras
   //   විකිණුම (පඩි) stays untouched
   //
   // extraSource === 'sale':
-  //   extras come off විකිණුම (පඩි) — i.e. adjustedSell = sell - extras
-  //   පිරිවැය (කොමිස්) stays untouched
+  //   extras are ADDED (signed) onto විකිණුම (පඩි) — i.e.
+  //   adjustedSell = sell + extras. A positive extra amount increases the
+  //   sale total; a negative extra amount decreases it, since adding a
+  //   negative number already subtracts its magnitude — no separate "minus"
+  //   branch needed. පිරිවැය (කොමිස්) stays untouched.
   const adjustedCost = extraSource === 'commission' ? grandCost + billRowsTotal : grandCost;
-  const adjustedSell = extraSource === 'sale' ? grandSell - billRowsTotal : grandSell;
+  const adjustedSell = extraSource === 'sale' ? grandSell + billRowsTotal : grandSell;
   const finalBalance = adjustedSell - adjustedCost;
 
   const handlePrint = () => window.print();
@@ -309,7 +312,7 @@ export default function BillModal({
                   'විකිණුම (පඩි)',
                   adjustedSell,
                   '#15803d',
-                  extraSource === 'sale' && billRowsTotal !== 0 ? `−අතිරේක ${Math.round(billRowsTotal)}` : undefined
+                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined
                 )}
               </div>
             </div>

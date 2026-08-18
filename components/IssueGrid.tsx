@@ -11,7 +11,6 @@
 //  5. Extra charges section uses a distinct amber/dark-amber theme so it
 //     visually separates from the navy grid above it.
 //
-// NEW:
 //  6. Extra charges no longer blindly sum/min into the final balance.
 //     A radio toggle — "විකුනුම් මුදලින්" (from sale total) vs
 //     "කොමිස් මුදලින්" (from commission/profit total, DEFAULT) — controls
@@ -20,6 +19,15 @@
 //     and reports the choice up via onExtraSourceChange.
 //  7. Selector is placed directly above the "add extra charge" row so it's
 //     obvious which total a new extra will affect.
+//
+// LATEST FIX:
+//  8. Sale-total adjustment is now a plain signed ADDITION: adjustedSell =
+//     grandTotalSelling + billRowsTotal. A positive extra amount increases
+//     the sale total; a negative extra amount decreases it (adding a
+//     negative number already subtracts its magnitude, so no separate
+//     "minus" branch is needed). This replaces the earlier subtraction-based
+//     formula, which had the sign backwards. Must mirror BillModal.tsx's
+//     adjustedSell exactly.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
@@ -541,7 +549,7 @@ export default function IssueGrid({
                 {/* use addAmountRef here, NOT editAmountRef */}
                 <input
                   ref={addAmountRef}
-                  type="number" min={0} step="0.01"
+                  type="number" step="0.01"
                   placeholder="0.00"
                   value={newRow.amount === '' ? '' : newRow.amount}
                   onChange={e => setNewRow(r => ({ ...r, amount: e.target.value }))}
@@ -593,9 +601,10 @@ export default function IssueGrid({
             a separate deduction from commission:
               extraSource === 'commission' (default) → extras ADD onto
                 මුළු පිරිවැය (cost); මුළු විකිණුම stays as-is
-              extraSource === 'sale' → extras come OFF මුළු විකිණුම (selling);
-                මුළු පිරිවැය stays as-is
-            This must mirror BillModal.tsx's adjustedCost/adjustedSell exactly.
+              extraSource === 'sale' → extras are ADDED (signed) onto
+                මුළු විකිණුම (selling); මුළු පිරිවැය stays as-is.
+                A positive extra increases the sale total, a negative extra
+                decreases it. Must mirror BillModal.tsx exactly.
           */}
           <div className="flex items-end gap-5 text-right">
             <div>
@@ -613,11 +622,11 @@ export default function IssueGrid({
               <div className="text-[10px] uppercase tracking-widest text-[#4a9eff] mb-0.5">
                 මුළු විකිණුම
                 {extraSource === 'sale' && billRowsTotal !== 0 && (
-                  <span className="text-[#f87171]"> (−අතිරේක)</span>
+                  <span className="text-[#f87171]"> ({billRowsTotal > 0 ? '+' : '−'}අතිරේක)</span>
                 )}
               </div>
               <div className="text-lg font-bold text-[#22c55e] font-mono">
-                රු. {(extraSource === 'sale' ? grandTotalSelling - billRowsTotal : grandTotalSelling).toFixed(2)}
+                රු. {(extraSource === 'sale' ? grandTotalSelling + billRowsTotal : grandTotalSelling).toFixed(2)}
               </div>
             </div>
             <div className="border-l border-[#1e3a5f] pl-5">
