@@ -20,7 +20,6 @@
 //  7. Selector is placed directly above the "add extra charge" row so it's
 //     obvious which total a new extra will affect.
 //
-// LATEST FIX:
 //  8. Sale-total adjustment is now a plain signed ADDITION: adjustedSell =
 //     grandTotalSelling + billRowsTotal. A positive extra amount increases
 //     the sale total; a negative extra amount decreases it (adding a
@@ -28,6 +27,15 @@
 //     "minus" branch is needed). This replaces the earlier subtraction-based
 //     formula, which had the sign backwards. Must mirror BillModal.tsx's
 //     adjustedSell exactly.
+//
+// LATEST FIX (matches BillModal.tsx):
+//  9. `finalBalance` shown in the footer (අවසාන ශේෂය) is a PROP passed down
+//     from page.tsx — this component does not compute it. To keep the
+//     receipt (BillModal) and this on-screen footer in agreement, page.tsx
+//     MUST compute finalBalance as the raw `grandTotalSelling - grandTotalCost`,
+//     ignoring billRowsTotal / extraSource entirely — extras must never move
+//     this number, only the "මුළු පිරිවැය" / "මුළු විකිණුම" boxes below should
+//     show the adjusted figures. See the marked block near the footer JSX.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
@@ -605,6 +613,14 @@ export default function IssueGrid({
                 මුළු විකිණුම (selling); මුළු පිරිවැය stays as-is.
                 A positive extra increases the sale total, a negative extra
                 decreases it. Must mirror BillModal.tsx exactly.
+
+            IMPORTANT — අවසාන ශේෂය (finalBalance) below is a PROP from
+            page.tsx and is NOT recomputed here. page.tsx must compute it as
+            the raw `grandTotalSelling - grandTotalCost`, ignoring
+            billRowsTotal / extraSource, so this number never moves when
+            extras are added or removed — only මුළු පිරිවැය / මුළු විකිණුම
+            (below) reflect the adjustment. This keeps it consistent with
+            BillModal.tsx's අවසාන කොමිස්.
           */}
           <div className="flex items-end gap-5 text-right">
             <div>

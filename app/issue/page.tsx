@@ -226,7 +226,7 @@ export default function HomePage() {
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
 
-  // ── UPDATED BALANCE LOGIC ───────────────────────────────────────────────
+  // ── BALANCE LOGIC ───────────────────────────────────────────────────────
   // Extra charges (billRowsTotal) are folded directly into exactly ONE base
   // total, chosen by `extraSource` — never shown/applied as a separate
   // deduction from the commission figure itself:
@@ -236,20 +236,33 @@ export default function HomePage() {
   //                                   adjustedCost = grandTotalCost + extras
   //                                   selling total stays untouched
   //
-  //   extraSource === 'sale'       → extras come OFF විකිණුම (පඩි) / selling:
-  //                                   adjustedSelling = grandTotalSelling - extras
+  //   extraSource === 'sale'       → extras are ADDED (signed) onto
+  //                                   විකිණුම (පඩි) / selling:
+  //                                   adjustedSelling = grandTotalSelling + extras
   //                                   cost total stays untouched
+  //                                   (a positive extra increases the sale
+  //                                   total, a negative one decreases it —
+  //                                   must mirror BillModal.tsx / IssueGrid.tsx)
   //
-  // finalBalance is always just adjustedSelling - adjustedCost.
+  // These adjusted totals are ONLY used for display in the "මුළු පිරිවැය" /
+  // "මුළු විකිණුම" boxes (passed down as grandTotalCost / grandTotalSelling
+  // is NOT what's adjusted here — see below).
   const adjustedTotalCost = extraSource === 'commission'
     ? grandTotalCost + billRowsTotal
     : grandTotalCost;
 
   const adjustedTotalSelling = extraSource === 'sale'
-    ? grandTotalSelling - billRowsTotal
+    ? grandTotalSelling + billRowsTotal
     : grandTotalSelling;
 
-  const finalBalance = adjustedTotalSelling - adjustedTotalCost;
+  // ── අවසාන ශේෂය (final balance) is intentionally NOT affected by extras,
+  // in either direction. It always equals the raw grandTotalSelling −
+  // grandTotalCost, regardless of billRowsTotal or extraSource. Extras only
+  // ever move the two "මුළු පිරිවැය" / "මුළු විකිණුම" display totals in
+  // IssueGrid's footer (computed there from grandTotalCost/grandTotalSelling
+  // + extraSource) and the equivalent boxes in BillModal.tsx — never this
+  // headline number. Must mirror BillModal.tsx's finalBalance exactly.
+  const finalBalance = grandTotalSelling - grandTotalCost;
 
   const handleSave = async () => {
     if (!selectedEmployee) return showToast('සේවකයෙකු තෝරන්න', 'error');

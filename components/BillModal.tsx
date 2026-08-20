@@ -55,7 +55,14 @@ export default function BillModal({
   //   branch needed. පිරිවැය (කොමිස්) stays untouched.
   const adjustedCost = extraSource === 'commission' ? grandCost + billRowsTotal : grandCost;
   const adjustedSell = extraSource === 'sale' ? grandSell + billRowsTotal : grandSell;
-  const finalBalance = adjustedSell - adjustedCost;
+
+  // ── අවසාන කොමිස් (final balance) is intentionally NOT affected by extras,
+  // in either direction. It always equals the raw grandSell − grandCost,
+  // regardless of billRowsTotal or extraSource. Only the two boxes above
+  // (පිරිවැය / විකිණුම) show the extras-adjusted figures + note — the
+  // headline number at the bottom stays fixed no matter what extras are
+  // added or removed. Must mirror IssueGrid.tsx / page.tsx exactly.
+  const finalBalance = grandSell - grandCost;
 
   const handlePrint = () => window.print();
 
@@ -366,9 +373,10 @@ export default function BillModal({
             )}
 
             {/* ── FINAL BALANCE ──────────────────────────────────────────────
-                Extras are already folded into adjustedCost or adjustedSell
-                above — this is simply adjustedSell − adjustedCost. No extra
-                deduction is applied a second time against commission here.
+                අවසාන කොමිස් is intentionally the raw grandSell − grandCost.
+                It does NOT reflect adjustedCost/adjustedSell, so adding or
+                removing extra charges never changes this number — extras
+                only ever show up in the two boxes above.
                 This is the headline number on the receipt: biggest, boldest. */}
             <div style={{
               border: '2.5px solid #000',
