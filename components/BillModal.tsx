@@ -24,7 +24,8 @@ export default function BillModal({
   let eveningReturnedQty = 0, eveningReturnedCost = 0;
   const billItems = categories.flatMap(cat =>
     cat.items.filter(i => i.morning_qty > 0 || i.evening_qty > 0).map(item => {
-      const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
+      // ── Allow negative sold/cost/sell (e.g. returns exceeding issued qty)
+      const sold = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
       const cost = sold * item.effective_cost;
       const sell = sold * item.effective_selling;
       grandCost += cost;
@@ -97,7 +98,7 @@ export default function BillModal({
   ): React.ReactElement => (
     <div style={{
       flex: 1,
-      border: `1.5px solid ${accentColor}`,
+      border: `1.5px solid ${value < 0 ? '#c00' : accentColor}`,
       borderRadius: '3px',
       background: '#fff',
       padding: '2mm 1mm',
@@ -112,7 +113,7 @@ export default function BillModal({
       <div style={{
         fontSize: '15pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
-        color: accentColor,
+        color: value < 0 ? '#c00' : accentColor,
       }}>
         {Math.round(value)}
       </div>
@@ -260,9 +261,9 @@ export default function BillModal({
                   <span style={numCell('center', item.morning_returned_qty > 0)}>{item.morning_returned_qty || '-'}</span>
                   <span style={numCell()}>{item.evening_qty || '-'}</span>
                   <span style={numCell('center', item.returned_qty > 0)}>{item.returned_qty || '-'}</span>
-                  <span style={numCell()}>{item.sold}</span>
-                  <span style={{ ...numCell('right'), fontWeight: 'bold' }}>{item.cost > 0 ? Math.round(item.cost) : '-'}</span>
-                  <span style={{ ...numCell('right'), fontWeight: 'bold' }}>{item.sell > 0 ? Math.round(item.sell) : '-'}</span>
+                  <span style={numCell('center', item.sold < 0)}>{item.sold !== 0 ? item.sold : '-'}</span>
+                  <span style={{ ...numCell('right', item.cost < 0), fontWeight: 'bold' }}>{item.cost !== 0 ? Math.round(item.cost) : '-'}</span>
+                  <span style={{ ...numCell('right', item.sell < 0), fontWeight: 'bold' }}>{item.sell !== 0 ? Math.round(item.sell) : '-'}</span>
                 </div>
               </div>
             ))}
@@ -285,13 +286,15 @@ export default function BillModal({
                 </span>
                 <span style={{
                   fontSize: '9pt', fontWeight: 'bold', textAlign: 'right',
-                  padding: '1px 2px', borderRight: '1px solid #ccc', color: '#666',
+                  padding: '1px 2px', borderRight: '1px solid #ccc',
+                  color: grandCost < 0 ? '#c00' : '#666',
                 }}>
                   {Math.round(grandCost)}
                 </span>
                 <span style={{
                   fontSize: '9pt', fontWeight: 'bold', textAlign: 'right',
                   padding: '1px 2px',
+                  color: grandSell < 0 ? '#c00' : undefined,
                 }}>
                   {Math.round(grandSell)}
                 </span>
@@ -345,26 +348,30 @@ export default function BillModal({
                   </span>
                 </div>
 
-                {billRows.map((row, i) => (
-                  <div key={i} style={{
-                    display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
-                    borderLeft: '1px solid #ddd', borderRight: '1px solid #ddd',
-                    borderBottom: '1px dotted #aaa',
-                    padding: '1px 0',
-                  }}>
-                    <span style={{ fontSize: '8.5pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
-                      {row.description}
-                    </span>
-                    <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px' }}>
-                      {Math.round(Number(row.qty) * Number(row.amount))}
-                    </span>
-                  </div>
-                ))}
+                {billRows.map((row, i) => {
+                  const amt = Number(row.qty) * Number(row.amount);
+                  return (
+                    <div key={i} style={{
+                      display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
+                      borderLeft: '1px solid #ddd', borderRight: '1px solid #ddd',
+                      borderBottom: '1px dotted #aaa',
+                      padding: '1px 0',
+                    }}>
+                      <span style={{ fontSize: '8.5pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
+                        {row.description}
+                      </span>
+                      <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px', color: amt < 0 ? '#c00' : undefined }}>
+                        {Math.round(amt)}
+                      </span>
+                    </div>
+                  );
+                })}
 
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',
                   fontSize: '8pt', fontWeight: 'bold',
                   borderTop: '2px solid #000', padding: '1px 0',
+                  color: billRowsTotal < 0 ? '#c00' : undefined,
                 }}>
                   <span>අතිරේක මුළු:</span>
                   <span>රු. {Math.round(billRowsTotal)}</span>

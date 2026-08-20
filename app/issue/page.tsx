@@ -212,17 +212,17 @@ export default function HomePage() {
     if (res.ok) setBillRows(prev => prev.filter(r => r.id !== id));
   };
 
-  const grandTotalCost = categories.reduce((sum, cat) =>
-    sum + cat.items.reduce((s, item) => {
-      const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
-      return s + sold * item.effective_cost;
-    }, 0), 0);
+const grandTotalCost = categories.reduce((sum, cat) =>
+  sum + cat.items.reduce((s, item) => {
+    const sold = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
+    return s + sold * item.effective_cost;
+  }, 0), 0);
 
-  const grandTotalSelling = categories.reduce((sum, cat) =>
-    sum + cat.items.reduce((s, item) => {
-      const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
-      return s + sold * item.effective_selling;
-    }, 0), 0);
+const grandTotalSelling = categories.reduce((sum, cat) =>
+  sum + cat.items.reduce((s, item) => {
+    const sold = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
+    return s + sold * item.effective_selling;
+  }, 0), 0);
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
 

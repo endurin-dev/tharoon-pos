@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // IssueGrid.tsx  –  FIXED + RESTYLED EXTRA CHARGES + SOURCE SELECTOR
+//                   + NEGATIVE-SOLD SUPPORT (returns can exceed issues)
 //
 // PREVIOUS FIXES:
 //  1. Split single `amountRef` into `addAmountRef` + `editAmountRef` so the
@@ -38,6 +39,18 @@
 // REVERTED:
 // 10. සේවකයා (employee) picker is back to a plain <select> — the searchable
 //     English→Sinhala transliteration combobox has been removed.
+//
+// NEW:
+// 11. `sold` is no longer clamped with Math.max(0, ...) — in both the
+//     per-item calc and the category subtotal loop. Returned quantities can
+//     legitimately exceed issued quantities (e.g. a return from a previous
+//     day's stock), which should flow through as a NEGATIVE sold figure and
+//     negative cost/selling totals, not get floored to zero and silently
+//     dropped. page.tsx's grandTotalCost / grandTotalSelling must use the
+//     same unclamped formula or the grid and the footer will disagree.
+// 12. Display conditions that gated on `> 0` (per-item totals, category
+//     subtotal row visibility) now use `!== 0` so negative figures actually
+//     render instead of being hidden behind the "-" placeholder.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
@@ -290,14 +303,17 @@ export default function IssueGrid({
         {categories.map(cat => {
           let catCost = 0, catSell = 0;
           cat.items.forEach(item => {
-            const sold = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
+            // no Math.max clamp — returns can exceed issues, producing a
+            // negative "sold" figure that should flow through as-is
+            const sold = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
             catCost += sold * item.effective_cost;
             catSell += sold * item.effective_selling;
           });
           return (
             <div key={cat.id} className="border-b border-[#1e3a5f]">
               {cat.items.map((item, idx) => {
-                const sold      = Math.max(0, (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty);
+                // no Math.max clamp — see note above
+                const sold      = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
                 const totalCost = sold * item.effective_cost;
                 const totalSell = sold * item.effective_selling;
                 const morningKey         = `${item.id}-morning`;
@@ -373,23 +389,23 @@ export default function IssueGrid({
                     <div className="border-r border-[#1e3a5f] flex items-center justify-end px-2 text-xs text-[#94a3b8]">
                       {item.effective_selling > 0 ? item.effective_selling.toFixed(2) : '-'}
                     </div>
-                    <div className="border-r border-[#1e3a5f] flex items-center justify-end px-2 text-xs text-[#fbbf24]">
-                      {totalCost > 0 ? totalCost.toFixed(2) : '-'}
+                    <div className={`border-r border-[#1e3a5f] flex items-center justify-end px-2 text-xs ${totalCost < 0 ? 'text-[#ef4444]' : 'text-[#fbbf24]'}`}>
+                      {totalCost !== 0 ? totalCost.toFixed(2) : '-'}
                     </div>
-                    <div className="flex items-center justify-end px-2 text-xs text-[#22c55e]">
-                      {totalSell > 0 ? totalSell.toFixed(2) : '-'}
+                    <div className={`flex items-center justify-end px-2 text-xs ${totalSell < 0 ? 'text-[#ef4444]' : 'text-[#22c55e]'}`}>
+                      {totalSell !== 0 ? totalSell.toFixed(2) : '-'}
                     </div>
                   </div>
                 );
               })}
-              {(catCost > 0 || catSell > 0) && (
+              {(catCost !== 0 || catSell !== 0) && (
                 <div className="grid bg-[#071420] text-[10px]" style={{ gridTemplateColumns: gridCols }}>
                   <div className="px-3 py-1 text-right text-[#4a9eff] uppercase tracking-widest"
                     style={{ gridColumn: sessionType === 'full_day' ? '1 / 9' : '1 / 8' }}>
                     {cat.name} උප එකතුව
                   </div>
-                  <div className="px-2 py-1 text-right text-[#fbbf24] border-l border-[#1e3a5f]">{catCost.toFixed(2)}</div>
-                  <div className="px-2 py-1 text-right text-[#22c55e] border-l border-[#1e3a5f]">{catSell.toFixed(2)}</div>
+                  <div className={`px-2 py-1 text-right border-l border-[#1e3a5f] ${catCost < 0 ? 'text-[#ef4444]' : 'text-[#fbbf24]'}`}>{catCost.toFixed(2)}</div>
+                  <div className={`px-2 py-1 text-right border-l border-[#1e3a5f] ${catSell < 0 ? 'text-[#ef4444]' : 'text-[#22c55e]'}`}>{catSell.toFixed(2)}</div>
                 </div>
               )}
             </div>
@@ -626,6 +642,11 @@ export default function IssueGrid({
             extras are added or removed — only මුළු පිරිවැය / මුළු විකිණුම
             (below) reflect the adjustment. Matches BillModal.tsx's
             අවසාන කොමිස්.
+
+            grandTotalCost / grandTotalSelling (props from page.tsx) must be
+            summed from the SAME unclamped `sold` formula used above, or
+            these totals will disagree with the per-item / per-category
+            figures shown in the grid whenever returns exceed issues.
           */}
           <div className="flex items-end gap-5 text-right">
             <div>
@@ -635,7 +656,7 @@ export default function IssueGrid({
                   <span className="text-[#f87171]"> (+අතිරේක)</span>
                 )}
               </div>
-              <div className="text-lg font-bold text-[#fbbf24] font-mono">
+              <div className={`text-lg font-bold font-mono ${(extraSource === 'commission' ? grandTotalCost + billRowsTotal : grandTotalCost) < 0 ? 'text-[#ef4444]' : 'text-[#fbbf24]'}`}>
                 රු. {(extraSource === 'commission' ? grandTotalCost + billRowsTotal : grandTotalCost).toFixed(2)}
               </div>
             </div>
@@ -646,7 +667,7 @@ export default function IssueGrid({
                   <span className="text-[#f87171]"> ({billRowsTotal > 0 ? '+' : '−'}අතිරේක)</span>
                 )}
               </div>
-              <div className="text-lg font-bold text-[#22c55e] font-mono">
+              <div className={`text-lg font-bold font-mono ${(extraSource === 'sale' ? grandTotalSelling + billRowsTotal : grandTotalSelling) < 0 ? 'text-[#ef4444]' : 'text-[#22c55e]'}`}>
                 රු. {(extraSource === 'sale' ? grandTotalSelling + billRowsTotal : grandTotalSelling).toFixed(2)}
               </div>
             </div>
