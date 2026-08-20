@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // IssueGrid.tsx  –  FIXED + RESTYLED EXTRA CHARGES + SOURCE SELECTOR
+//                    + SEARCHABLE (ENGLISH→SINHALA) EMPLOYEE PICKER
 //
 // PREVIOUS FIXES:
 //  1. Split single `amountRef` into `addAmountRef` + `editAmountRef` so the
@@ -28,20 +29,28 @@
 //     formula, which had the sign backwards. Must mirror BillModal.tsx's
 //     adjustedSell exactly.
 //
-// LATEST FIX (matches BillModal.tsx):
 //  9. `finalBalance` shown in the footer (අවසාන ශේෂය) is a PROP passed down
-//     from page.tsx — this component does not compute it. To keep the
-//     receipt (BillModal) and this on-screen footer in agreement, page.tsx
-//     MUST compute finalBalance as the raw `grandTotalSelling - grandTotalCost`,
-//     ignoring billRowsTotal / extraSource entirely — extras must never move
-//     this number, only the "මුළු පිරිවැය" / "මුළු විකිණුම" boxes below should
-//     show the adjusted figures. See the marked block near the footer JSX.
+//     from page.tsx — this component does not compute it. page.tsx computes
+//     it as the raw `grandTotalSelling - grandTotalCost`, ignoring
+//     billRowsTotal / extraSource, so it never moves when extras are added
+//     or removed — only "මුළු පිරිවැය" / "මුළු විකිණුම" below reflect the
+//     adjustment. Matches BillModal.tsx's අවසාන කොමිස්.
+//
+// LATEST FEATURE:
+// 10. සේවකයා (employee) picker is now a searchable combobox instead of a
+//     plain <select>. The user can type an employee's name in English
+//     letters (e.g. "akila") and it matches employees whose SINHALA name
+//     transliterates to that sound (අකිල → "akila") via sinhalaToRoman() /
+//     matchesEmployeeSearch() from '@/lib/sinhala-search'. Typing raw
+//     Sinhala or partial names still works too. Click a result (or the
+//     "✕ clear" row) to select; outside click or Escape closes the list.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
 
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
+import { matchesEmployeeSearch } from '@/lib/sinhala-search';
 
 interface IssueGridProps {
   categories: CategoryWithItems[];
@@ -203,6 +212,70 @@ export default function IssueGrid({
 
   const gridCols = sessionType === 'full_day' ? COLS : COLS_MRN;
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── SEARCHABLE EMPLOYEE PICKER ──────────────────────────────────────────
+  // Type English letters (e.g. "akila") to find an employee whose Sinhala
+  // name transliterates to that sound (අකිල). See '@/lib/sinhala-search'.
+  // ══════════════════════════════════════════════════════════════════════════
+  const [employeeQuery, setEmployeeQuery] = useState(selectedEmployee?.name ?? '');
+  const [employeeDropdownOpen, setEmployeeDropdownOpen] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(0);
+  const employeeBoxRef = useRef<HTMLDivElement>(null);
+  const employeeInputRef = useRef<HTMLInputElement>(null);
+
+  // Keep the visible text in sync when the selected employee changes from
+  // outside this component (e.g. loading a saved session).
+  useEffect(() => {
+    setEmployeeQuery(selectedEmployee?.name ?? '');
+  }, [selectedEmployee?.id]);
+
+  // Close the dropdown on outside click.
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (employeeBoxRef.current && !employeeBoxRef.current.contains(e.target as Node)) {
+        setEmployeeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filteredEmployees = useMemo(() => {
+    const q = employeeQuery.trim();
+    if (!q) return employees;
+    return employees.filter(e => matchesEmployeeSearch(e.name, q));
+  }, [employees, employeeQuery]);
+
+  useEffect(() => { setHighlightIdx(0); }, [employeeQuery, employeeDropdownOpen]);
+
+  const selectEmployee = (emp: Employee | null) => {
+    onEmployeeChange(emp);
+    setEmployeeQuery(emp?.name ?? '');
+    setEmployeeDropdownOpen(false);
+  };
+
+  const handleEmployeeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!employeeDropdownOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      setEmployeeDropdownOpen(true);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightIdx(i => Math.min(i + 1, filteredEmployees.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightIdx(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const emp = filteredEmployees[highlightIdx];
+      if (emp) selectEmployee(emp);
+    } else if (e.key === 'Escape') {
+      setEmployeeDropdownOpen(false);
+      setEmployeeQuery(selectedEmployee?.name ?? '');
+      employeeInputRef.current?.blur();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#0a0f1e] text-white font-mono">
 
@@ -213,15 +286,54 @@ export default function IssueGrid({
           <input type="date" value={selectedDate} onChange={e => onDateChange(e.target.value)}
             className="bg-[#0a1628] border border-[#1e3a5f] text-white px-2 py-1 rounded text-sm focus:border-[#4a9eff] outline-none" />
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* ── සේවකයා — searchable combobox (English → Sinhala phonetic match) ── */}
+        <div className="flex items-center gap-2 relative" ref={employeeBoxRef}>
           <span className="text-[#4a9eff] font-semibold uppercase tracking-widest text-xs">සේවකයා</span>
-          <select value={selectedEmployee?.id ?? ''}
-            onChange={e => { const emp = employees.find(x => x.id === Number(e.target.value)) || null; onEmployeeChange(emp); }}
-            className="bg-[#0a1628] border border-[#1e3a5f] text-white px-2 py-1 rounded text-sm focus:border-[#4a9eff] outline-none min-w-[130px]">
-            <option value="">තෝරන්න...</option>
-            {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
+          <div className="relative">
+            <input
+              ref={employeeInputRef}
+              type="text"
+              value={employeeQuery}
+              onChange={e => { setEmployeeQuery(e.target.value); setEmployeeDropdownOpen(true); }}
+              onFocus={e => { setEmployeeDropdownOpen(true); e.target.select(); }}
+              onKeyDown={handleEmployeeKeyDown}
+              placeholder="සොයන්න... (e.g. akila)"
+              className="bg-[#0a1628] border border-[#1e3a5f] text-white px-2 py-1 rounded text-sm focus:border-[#4a9eff] outline-none min-w-[150px]"
+            />
+            {employeeDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1 w-64 max-h-72 overflow-y-auto bg-[#0a1628] border border-[#1e3a5f] rounded shadow-2xl z-30">
+                {filteredEmployees.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-[#5a7ba0]">ප්‍රතිඵල නැත</div>
+                ) : (
+                  filteredEmployees.map((emp, idx) => (
+                    <div
+                      key={emp.id}
+                      onMouseDown={e => e.preventDefault()} // keep input focus until click resolves
+                      onClick={() => selectEmployee(emp)}
+                      onMouseEnter={() => setHighlightIdx(idx)}
+                      className={`px-3 py-1.5 text-sm cursor-pointer transition-colors
+                        ${idx === highlightIdx ? 'bg-[#1e3a5f] text-white' : 'text-[#c8d8f0] hover:bg-[#132544]'}
+                        ${selectedEmployee?.id === emp.id ? 'font-bold text-[#4a9eff]' : ''}`}
+                    >
+                      {emp.name}
+                    </div>
+                  ))
+                )}
+                {selectedEmployee && (
+                  <div
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => selectEmployee(null)}
+                    className="px-3 py-1.5 text-xs text-[#f87171] border-t border-[#1e3a5f] cursor-pointer hover:bg-[#220a0a]"
+                  >
+                    ✕ තේරීම ඉවත් කරන්න
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
         <div className="flex items-center gap-2">
           <span className="text-[#4a9eff] font-semibold uppercase tracking-widest text-xs">වාහනය</span>
           <select value={selectedVehicle?.id ?? ''}
@@ -615,12 +727,12 @@ export default function IssueGrid({
                 decreases it. Must mirror BillModal.tsx exactly.
 
             IMPORTANT — අවසාන ශේෂය (finalBalance) below is a PROP from
-            page.tsx and is NOT recomputed here. page.tsx must compute it as
+            page.tsx and is NOT recomputed here. page.tsx computes it as
             the raw `grandTotalSelling - grandTotalCost`, ignoring
             billRowsTotal / extraSource, so this number never moves when
             extras are added or removed — only මුළු පිරිවැය / මුළු විකිණුම
-            (below) reflect the adjustment. This keeps it consistent with
-            BillModal.tsx's අවසාන කොමිස්.
+            (below) reflect the adjustment. Matches BillModal.tsx's
+            අවසාන කොමිස්.
           */}
           <div className="flex items-end gap-5 text-right">
             <div>
