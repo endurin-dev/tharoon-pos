@@ -89,7 +89,7 @@ export default function BillModal({
     borderLeft: first ? 'none' : '1px solid #ccc',
   });
 
-  // ── Clear, large-number summary box for පිරිවැය / විකිණුම ──────────────────
+  // ── Compact summary box for පිරිවැය / විකිණුම (reduced size) ───────────────
   const bigTotalBox = (
     label: string,
     value: number,
@@ -98,34 +98,35 @@ export default function BillModal({
   ): React.ReactElement => (
     <div style={{
       flex: 1,
-      border: `1.5px solid ${value < 0 ? '#c00' : accentColor}`,
+      minWidth: 0,
+      border: `1px solid ${value < 0 ? '#c00' : accentColor}`,
       borderRadius: '3px',
       background: '#fff',
-      padding: '2mm 1mm',
+      padding: '1mm 1mm',
       textAlign: 'center',
     }}>
       <div style={{
-        fontSize: '7.5pt', fontWeight: 'bold', color: '#333',
-        letterSpacing: '0.3px', marginBottom: '1mm',
+        fontSize: '6.5pt', fontWeight: 'bold', color: '#333',
+        letterSpacing: '0.2px', marginBottom: '0.5mm',
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: '15pt', fontWeight: 900, lineHeight: 1,
+        fontSize: '11pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
         color: value < 0 ? '#c00' : accentColor,
       }}>
         {Math.round(value)}
       </div>
       {note && (
-        <div style={{ fontSize: '6.5pt', fontWeight: 'bold', color: '#c00', marginTop: '1mm' }}>
+        <div style={{ fontSize: '6pt', fontWeight: 'bold', color: '#c00', marginTop: '0.5mm' }}>
           {note}
         </div>
       )}
     </div>
   );
 
-  // ── Box for a return total: quantity + its cost value, two lines ─────────
+  // ── Box for a return total: quantity (normal size) + cost value (large) ───
   const returnBox = (
     label: string,
     qty: number,
@@ -133,18 +134,20 @@ export default function BillModal({
   ): React.ReactElement => (
     <div style={{
       flex: 1,
-      border: '1.5px solid #dc2626',
+      minWidth: 0,
+      border: '2px solid #dc2626',
       borderRadius: '3px',
       background: '#fff5f5',
-      padding: '2mm 1mm',
+      padding: '3mm 1mm',
       textAlign: 'center',
     }}>
       <div style={{
-        fontSize: '7.5pt', fontWeight: 'bold', color: '#7f1d1d',
-        letterSpacing: '0.3px', marginBottom: '1mm',
+        fontSize: '9.5pt', fontWeight: 'bold', color: '#7f1d1d',
+        letterSpacing: '0.3px', marginBottom: '1.5mm',
       }}>
-        {label} <span style={{ fontWeight: 'normal' }}>(ප්‍රමාණය)</span>
+        {label} <span style={{ fontWeight: 'normal', fontSize: '8pt' }}>(ප්‍රමාණය)</span>
       </div>
+      {/* Quantity — kept at original size */}
       <div style={{
         fontSize: '13pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
@@ -153,14 +156,16 @@ export default function BillModal({
         {qty}
       </div>
       <div style={{
-        borderTop: '1px dashed #dc2626', margin: '1.5mm 2mm 1mm',
+        borderTop: '1px dashed #dc2626', margin: '2mm 2mm 1.5mm',
       }} />
+      {/* Value — enlarged */}
       <div style={{
-        fontSize: '13pt', fontWeight: 900, lineHeight: 1,
+        fontSize: '20pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
         color: '#b91c1c',
       }}>
-        රු. {Math.round(costValue)}
+        <span style={{ fontSize: '9pt', marginRight: '1mm' }}>රු.</span>
+        {Math.round(costValue)}
       </div>
     </div>
   );
@@ -301,7 +306,7 @@ export default function BillModal({
               </div>
 
               {/* Return totals — quantity + cost value, only shown if any
-                  returns exist for this session */}
+                  returns exist for this session. Value is enlarged. */}
               {(morningReturnedQty > 0 || eveningReturnedQty > 0) && (
                 <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
                   {morningReturnedQty > 0 && returnBox('උදේ ආපසු', morningReturnedQty, morningReturnedCost)}
@@ -309,7 +314,7 @@ export default function BillModal({
                 </div>
               )}
 
-              {/* Individual total boxes — large, clearly readable numbers.
+              {/* Individual total boxes — now compact.
                   These carry the extras adjustment (see note under each). */}
               <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
                 {bigTotalBox(

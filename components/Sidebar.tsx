@@ -18,6 +18,8 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const isIssuePage = pathname === '/issue';
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [dateStr, setDateStr] = useState('');
 
@@ -49,11 +51,24 @@ export default function Sidebar() {
   };
 
   return (
-    <nav className="w-52 bg-[#071020] border-r border-[#1e3a5f] flex flex-col shrink-0">
+    <nav className={`${isCollapsed ? 'w-16' : 'w-52'} ${isIssuePage ? 'bg-white border-slate-200' : 'bg-[#071020] border-[#1e3a5f]'} border-r flex flex-col shrink-0 transition-[width] duration-200`}>
       {/* Brand */}
-      <div className="px-4 py-4 border-b border-[#1e3a5f]">
-        <div className="text-[#4a9eff] font-bold text-lg tracking-wider">තරූන් බේකර්ස්</div>
-        <div className="text-[#94a3b8] text-[10px] uppercase tracking-widest mt-0.5">කළමනාකරණ පද්ධතිය</div>
+      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-3 border-b ${isIssuePage ? 'border-slate-200' : 'border-[#1e3a5f]'}`}>
+        {!isCollapsed && (
+          <div className="min-w-0">
+            <div className={`${isIssuePage ? 'text-blue-700' : 'text-[#4a9eff]'} font-bold text-lg tracking-wider whitespace-nowrap`}>තරූන් බේකර්ස්</div>
+            <div className={`${isIssuePage ? 'text-slate-500' : 'text-[#94a3b8]'} text-[10px] uppercase tracking-widest mt-0.5 whitespace-nowrap`}>කළමනාකරණ පද්ධතිය</div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(collapsed => !collapsed)}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className={`rounded p-2 transition-colors ${isIssuePage ? 'text-slate-600 hover:bg-slate-100' : 'text-[#94a3b8] hover:bg-[#0d1629]'}`}
+        >
+          {isCollapsed ? '☰' : '‹'}
+        </button>
       </div>
 
       {/* Nav Items */}
@@ -64,15 +79,20 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all ${
+              title={isCollapsed ? item.label : undefined}
+              className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2.5 text-sm transition-all ${
                 isActive
-                  ? 'bg-[#1e3a5f] text-[#4a9eff] font-semibold border-r-2 border-[#4a9eff]'
-                  : 'text-[#94a3b8] hover:text-white hover:bg-[#0d1629]'
+                  ? isIssuePage
+                    ? 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600'
+                    : 'bg-[#1e3a5f] text-[#4a9eff] font-semibold border-r-2 border-[#4a9eff]'
+                  : isIssuePage
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    : 'text-[#94a3b8] hover:text-white hover:bg-[#0d1629]'
               }`}
             >
               <span className="text-base leading-none">{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
-              {item.protected && (
+              {!isCollapsed && <span className="flex-1">{item.label}</span>}
+              {!isCollapsed && item.protected && (
                 <span className="text-[10px] opacity-50" title="මුරපද ආරක්ෂිතයි">
                   {isAdminUnlocked ? '🔓' : '🔒'}
                 </span>
@@ -83,25 +103,28 @@ export default function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-[#1e3a5f]">
+      <div className={`border-t ${isIssuePage ? 'border-slate-200' : 'border-[#1e3a5f]'}`}>
         {/* Admin lock/unlock status */}
         {isAdminUnlocked && (
           <button
             onClick={handleLock}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-[#ef4444] hover:bg-[#1a0808] transition-all"
+            title={isCollapsed ? 'පරිපාලකය අගුළු දමන්න' : undefined}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-2 px-4'} py-2.5 text-xs text-[#ef4444] ${isIssuePage ? 'hover:bg-red-50' : 'hover:bg-[#1a0808]'} transition-all`}
           >
             <span>🔐</span>
-            <span>පරිපාලකය අගුළු දමන්න</span>
+            {!isCollapsed && <span>පරිපාලකය අගුළු දමන්න</span>}
           </button>
         )}
-        <div className="px-4 py-3">
-          <div className="text-[#4a9eff] text-[10px] uppercase tracking-widest">
-            {dateStr}
+        {!isCollapsed && (
+          <div className="px-4 py-3">
+            <div className={`${isIssuePage ? 'text-blue-700' : 'text-[#4a9eff]'} text-[10px] uppercase tracking-widest`}>
+              {dateStr}
+            </div>
+            {isAdminUnlocked && (
+              <div className="text-[#22c55e] text-[9px] mt-0.5 uppercase tracking-widest">● පරිපාලකව ඇතුලත්</div>
+            )}
           </div>
-          {isAdminUnlocked && (
-            <div className="text-[#22c55e] text-[9px] mt-0.5 uppercase tracking-widest">● පරිපාලකව ඇතුලත්</div>
-          )}
-        </div>
+        )}
       </div>
     </nav>
   );

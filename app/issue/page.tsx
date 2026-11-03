@@ -296,37 +296,71 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
 
   return (
     <div className="flex flex-col h-full relative">
-      <div className="bg-[#0a1628] border-b border-[#1e3a5f] px-4 py-2 flex items-center justify-between">
-        <h1 className="text-[#4a9eff] font-bold text-sm uppercase tracking-widest">
-          භාණ්ඩ නිකුත් කිරීම
-        </h1>
-        <div className="text-[#94a3b8] text-xs">
-          {sessionExists && <span className="text-[#22c55e] mr-3">● සැසිය ක්‍රියාත්මකයි</span>}
-          ⌨️ Enter → පහළ · Tab → දකුණ · ↑↓ එකම තීරය · ←→ එකම පේළිය
+      <div aria-label="භාණ්ඩ නිකුත් කිරීමේ පාලක" className="bg-[#ffffff] border-b border-[#cbd5e1] px-2 py-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <h1 className="sr-only">භාණ්ඩ නිකුත් කිරීම</h1>
+        <label className="flex items-center gap-1 whitespace-nowrap">
+          <span className="text-[#475569] font-semibold">දිනය</span>
+          <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+            className="h-6 bg-white border border-[#cbd5e1] text-slate-900 px-1 rounded text-xs focus:border-[#2563eb] outline-none" />
+        </label>
+        <label className="flex items-center gap-1 whitespace-nowrap">
+          <span className="text-[#475569] font-semibold">සේවකයා</span>
+          <select value={selectedEmployee?.id ?? ''}
+            onChange={e => { const emp = employees.find(x => x.id === Number(e.target.value)) || null; setSelectedEmployee(emp); }}
+            className="h-6 min-w-[94px] bg-white border border-[#cbd5e1] text-slate-900 px-1 rounded text-xs focus:border-[#2563eb] outline-none">
+            <option value="">කිසිවක් නැත</option>
+            {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1 whitespace-nowrap">
+          <span className="text-[#475569] font-semibold">වාහනය</span>
+          <select value={selectedVehicle?.id ?? ''}
+            onChange={e => { const vehicle = vehicles.find(x => x.id === Number(e.target.value)) || null; setSelectedVehicle(vehicle); }}
+            className="h-6 min-w-[64px] bg-white border border-[#cbd5e1] text-slate-900 px-1 rounded text-xs focus:border-[#2563eb] outline-none">
+            <option value="">කිසිවක් නැත</option>
+            {vehicles.map(vehicle => <option key={vehicle.id} value={vehicle.id}>{vehicle.vehicle_number}</option>)}
+          </select>
+        </label>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setShowSummary(true)} className="h-6 px-1.5 bg-[#e2e8f0] hover:bg-[#cbd5e1] text-[#2563eb] rounded border border-[#cbd5e1] transition-all whitespace-nowrap">සාරාංශය</button>
+          <button onClick={() => setShowBill(true)} className="h-6 px-1.5 bg-[#f0fdf4] hover:bg-[#dcfce7] text-[#15803d] rounded border border-[#dcfce7] transition-all whitespace-nowrap">බිල ලබාගන්න</button>
+        </div>
+        <div className="flex items-center gap-2 border-l border-[#e2e8f0] pl-2">
+          <label className="flex items-center gap-1 whitespace-nowrap">
+            <input type="radio" name="session" value="morning" checked={sessionType === 'morning'}
+              onChange={() => setSessionType('morning')} className="accent-[#2563eb]" />
+            <span className="text-[#475569]">උදේ</span>
+          </label>
+          <label className="flex items-center gap-1 whitespace-nowrap">
+            <input type="radio" name="session" value="full_day" checked={sessionType === 'full_day'}
+              onChange={() => setSessionType('full_day')} className="accent-[#2563eb]" />
+            <span className="text-[#475569]">සම්පූර්ණ දිනය</span>
+          </label>
+        </div>
+        <div className="flex items-center gap-2 border-l border-[#e2e8f0] pl-2">
+          <label className="flex items-center gap-1 whitespace-nowrap">
+            <input type="radio" name="payment" value="paid" checked={paymentStatus === 'paid'}
+              onChange={() => setPaymentStatus('paid')} className="accent-[#15803d]" />
+            <span className="text-[#475569]">ගෙවා ඇත</span>
+          </label>
+          <label className="flex items-center gap-1 whitespace-nowrap">
+            <input type="radio" name="payment" value="unpaid" checked={paymentStatus === 'unpaid'}
+              onChange={() => setPaymentStatus('unpaid')} className="accent-[#dc2626]" />
+            <span className="text-[#475569]">ගෙවා නැත</span>
+          </label>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <IssueGrid
           categories={categories}
-          employees={employees}
-          vehicles={vehicles}
           sessionType={sessionType}
-          selectedDate={selectedDate}
-          selectedEmployee={selectedEmployee}
-          selectedVehicle={selectedVehicle}
-          onSessionTypeChange={setSessionType}
-          onDateChange={setSelectedDate}
-          onEmployeeChange={setSelectedEmployee}
-          onVehicleChange={setSelectedVehicle}
           onCategoryChange={handleCategoryChange}
           onSave={handleSave}
           onUpdate={handleUpdate}
           onGetBill={() => setShowBill(true)}
           onSummary={() => setShowSummary(true)}
           isSaving={isSaving}
-          paymentStatus={paymentStatus}
-          onPaymentStatusChange={setPaymentStatus}
           sessionExists={sessionExists}
           sessionId={sessionId}
           finalBalance={finalBalance}
@@ -344,7 +378,7 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
 
       {toast && (
         <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-xl font-semibold text-sm z-50 ${
-          toast.type === 'success' ? 'bg-[#22c55e] text-white' : 'bg-[#ef4444] text-white'
+          toast.type === 'success' ? 'bg-[#15803d] text-white' : 'bg-[#dc2626] text-white'
         }`}>
           {toast.type === 'success' ? '✓' : '✕'} {toast.msg}
         </div>
