@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // IssueGrid.tsx  –  FIXED + RESTYLED EXTRA CHARGES + SOURCE SELECTOR
 //                   + NEGATIVE-SOLD SUPPORT (returns can exceed issues)
-//                   + SINGLE THIN CATEGORY DIVIDER
+//                   + THICK DARK-RED CATEGORY DIVIDER
 //
 // PREVIOUS FIXES:
 //  1. Split single `amountRef` into `addAmountRef` + `editAmountRef` so the
@@ -52,10 +52,9 @@
 //     `!== 0` so negative figures actually render instead of being hidden.
 //
 // NEW:
-// 13. Category divider is a SINGLE thin line (1px, slate-500). The category
+// 13. Category divider is a SINGLE thick dark-red line. The category
 //     wrapper owns the line; the last item row in each category has no
-//     bottom border of its own, so the line never doubles up. No thick
-//     borders, no gaps, no top band.
+//     bottom border of its own, so the line never doubles up.
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use client';
@@ -89,7 +88,7 @@ interface IssueGridProps {
 }
 
 const COLS     = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px 145px';
-const COLS_MRN = '160px 140px 80px 80px 80px 80px 90px 90px 90px 90px 145px';
+const COLS_MRN = '160px 140px 80px 80px 80px 90px 90px 90px 90px 145px';
 
 // ── Blank add-row state ───────────────────────────────────────────────────────
 const BLANK = { description: '', amount: '' as string | number };
@@ -210,6 +209,23 @@ export default function IssueGrid({
   };
 
   const gridCols = sessionType === 'full_day' ? COLS : COLS_MRN;
+  const quantityTotals = categories.reduce((totals, category) => {
+    category.items.forEach(item => {
+      totals.morning += item.morning_qty;
+      totals.morningReturned += item.morning_returned_qty;
+      totals.evening += item.evening_qty;
+      totals.returned += item.returned_qty;
+      totals.qts += (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
+      totals.morningCost += item.morning_qty * item.effective_cost;
+      totals.morningReturnedCost -= item.morning_returned_qty * item.effective_cost;
+      totals.eveningCost += item.evening_qty * item.effective_cost;
+      totals.returnedCost -= item.returned_qty * item.effective_cost;
+    });
+    return totals;
+  }, {
+    morning: 0, morningReturned: 0, evening: 0, returned: 0, qts: 0,
+    morningCost: 0, morningReturnedCost: 0, eveningCost: 0, returnedCost: 0,
+  });
 
   return (
     <div className="issue-theme flex flex-col h-full min-h-0 bg-[#f8fafc] text-[#1e293b] font-mono">
@@ -225,7 +241,7 @@ export default function IssueGrid({
           {sessionType === 'full_day' && (
             <div className="px-1 py-1 border-r border-[#cbd5e1] text-center">සවස ප්‍රමාණ</div>
           )}
-          <div className="px-1 py-1 border-r border-[#cbd5e1] text-center text-[#c2410c]">ආපසු</div>
+          <div className="px-1 py-1 border-r border-[#cbd5e1] text-center text-[#c2410c]">සවස ආපසු</div>
           <div className="px-1 py-1 border-r border-[#cbd5e1] text-center">පිරිවැය</div>
           <div className="px-1 py-1 border-r border-[#cbd5e1] text-center">විකිණුම</div>
           <div className="px-1 py-1 border-r border-[#cbd5e1] text-center">මුළු පිරිවැය</div>
@@ -246,8 +262,8 @@ export default function IssueGrid({
             catSell += sold * item.effective_selling;
           });
           return (
-            // ── CATEGORY BLOCK: one thin line under the whole category
-            <div key={cat.id} className="border-b border-[#64748b]">
+            // ── CATEGORY BLOCK: one thick dark-red line under the whole category
+            <div key={cat.id} className="border-b-4 border-[#7f1d1d]">
               {cat.items.map((item, idx) => {
                 // no Math.max clamp — see note above
                 const sold      = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
@@ -354,6 +370,53 @@ export default function IssueGrid({
             </div>
           );
         })}
+        <div
+          className="grid items-stretch border-t-2 border-[#1e293b] bg-[#dbeafe] text-lg font-extrabold"
+          style={{ gridTemplateColumns: gridCols }}
+          aria-label="මුළු ප්‍රමාණ සහ එකතු"
+        >
+          <div className="col-span-2 flex items-center border-r border-[#94a3b8] px-2 py-2 text-[#1e293b]">
+            එකතුව
+          </div>
+          <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-black">
+            <span className="text-[10px] leading-tight text-center">උදේ ප්‍රමාණ</span>
+            <span>{quantityTotals.morning}</span>
+            <span className="text-lg font-black">{quantityTotals.morningCost.toFixed(2)}</span>
+          </div>
+          <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-[#c2410c]">
+            <span className="text-[10px] leading-tight text-center">උදේ ආපසු</span>
+            <span>{quantityTotals.morningReturned}</span>
+            <span className="text-lg font-black">{Math.abs(quantityTotals.morningReturnedCost).toFixed(2)}</span>
+          </div>
+          {sessionType === 'full_day' && (
+            <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-black">
+              <span className="text-[10px] leading-tight text-center">සවස ප්‍රමාණ</span>
+              <span>{quantityTotals.evening}</span>
+              <span className="text-lg font-black">{quantityTotals.eveningCost.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-[#c2410c]">
+            <span className="text-[10px] leading-tight text-center">සවස ආපසු</span>
+            <span>{quantityTotals.returned}</span>
+            <span className="text-lg font-black">{Math.abs(quantityTotals.returnedCost).toFixed(2)}</span>
+          </div>
+          <div className="border-r border-[#94a3b8]" />
+          <div className="border-r border-[#94a3b8]" />
+          <div className="flex items-center justify-end border-r border-[#94a3b8] px-2 py-2 text-[#b45309]">
+            {grandTotalCost.toFixed(2)}
+          </div>
+          <div className="flex items-center justify-end border-r border-[#94a3b8] px-2 py-2 text-[#15803d]">
+            {grandTotalSelling.toFixed(2)}
+          </div>
+          <div
+            className="flex items-center justify-center gap-1 px-1 py-2 text-sm whitespace-nowrap"
+            title="මුළු පිරිවැය / මුළු විකිණුම"
+          >
+            <span className="text-[#b45309]">{grandTotalCost.toFixed(2)}</span>
+            <span className="text-[#64748b]">/</span>
+            <span className="text-[#15803d]">{grandTotalSelling.toFixed(2)}</span>
+          </div>
+        </div>
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
@@ -615,7 +678,7 @@ export default function IssueGrid({
               </div>
             </div>
             <div className="border-l border-[#e2e8f0] pl-5">
-              <div className="text-[10px] uppercase tracking-widest text-[#2563eb] mb-0.5">අවසාන ශේෂය</div>
+              <div className="text-[12px] uppercase tracking-widest text-[#fffff] mb-0.5">කොමිස් මුදල</div>
               <div className={`text-2xl font-bold font-mono ${finalBalance >= 0 ? 'text-[#0284c7]' : 'text-[#dc2626]'}`}>
                 රු. {finalBalance.toFixed(2)}
               </div>
