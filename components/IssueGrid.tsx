@@ -357,47 +357,47 @@ export default function IssueGrid({
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          ── EXTRA BILL ROWS  (collapsible, distinct rose theme) ───────────
+          ── EXTRA BILL ROWS  (collapsible, distinct slate theme) ──────────
          ══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#fff7f7] border-t-2 border-[#dc2626]">
+      <div className="bg-[#f1f5f9] border-2 border-black rounded-md shadow-sm overflow-hidden">
 
         {/* ── Collapse / expand header bar ── */}
         <button
           onClick={() => setShowExtra(p => !p)}
-          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#fff1f2] transition-colors group"
+          className="w-full flex items-center justify-between px-4 py-1.5 bg-black hover:bg-[#1f2937] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white transition-colors group"
         >
           <div className="flex items-center gap-2">
-            <span className={`text-[10px] transition-transform duration-200 text-[#b45309] ${showExtra ? 'rotate-90' : ''}`}>▶</span>
-            <span className="text-[#dc2626] text-[10px] uppercase tracking-widest font-bold">
+            <span className={`text-xs transition-transform duration-200 text-white ${showExtra ? 'rotate-90' : ''}`}>▶</span>
+            <span className="text-white text-sm uppercase tracking-widest font-extrabold">
               අතිරේක ගාස්තු
             </span>
             {billRows.length > 0 && (
-              <span className="bg-[#fecaca] text-[#b91c1c] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <span className="bg-white text-black border border-white text-xs font-extrabold px-2 py-0.5 rounded-full">
                 {billRows.length}
               </span>
             )}
             {billRowsTotal !== 0 && (
-              <span className="text-[#dc2626] text-[10px] font-semibold">· රු. {billRowsTotal.toFixed(2)}</span>
+              <span className="text-white text-xs font-bold">· රු. {billRowsTotal.toFixed(2)}</span>
             )}
             {billRowsTotal !== 0 && (
-              <span className="text-[#64748b] text-[10px]">
+              <span className="text-white/80 text-[10px]">
                 ({extraSource === 'sale' ? 'විකිණුමෙන් අඩුවේ' : 'පිරිවැයට එකතුවේ'})
               </span>
             )}
           </div>
           {!sessionId && (
-            <span className="text-[#991b1b] text-[10px]">(සුරැකීමේදී ස්වයංක්‍රීයව)</span>
+            <span className="text-white text-[10px] font-semibold">(සුරැකීමේදී ස්වයංක්‍රීයව)</span>
           )}
         </button>
 
         {/* ── Collapsible body ── */}
         {showExtra && (
-          <div className="px-4 pb-3 border-t border-[#fecaca]">
+          <div className="px-4 pb-3 border-t-2 border-black">
 
             {/* Existing rows table */}
             {billRows.length > 0 && (
-              <div className="mt-2 mb-2 rounded border border-[#fecaca] overflow-hidden">
-                <div className="grid grid-cols-[1fr_110px_64px] bg-[#ffffff] text-[#dc2626] text-[10px] uppercase tracking-widest px-3 py-1.5 border-b border-[#fecaca] font-bold">
+              <div className="mt-2 mb-2 rounded border border-[#cbd5e1] overflow-hidden">
+                <div className="grid grid-cols-[1fr_110px_64px] bg-[#e2e8f0] text-[#475569] text-[10px] uppercase tracking-widest px-3 py-1.5 border-b border-[#cbd5e1] font-bold">
                   <span>විස්තරය</span>
                   <span className="text-right">මුදල (රු.)</span>
                   <span />
@@ -407,7 +407,7 @@ export default function IssueGrid({
                   <div key={row.id ?? i}>
                     {editRow && editRow.id === row.id ? (
                       /* ── inline edit ── */
-                      <div className="grid grid-cols-[1fr_110px_64px] gap-1.5 px-3 py-1.5 bg-[#fff1f2] border-b border-[#fecaca] items-center">
+                      <div className="grid grid-cols-[1fr_110px_64px] gap-1.5 px-3 py-1.5 bg-[#e2e8f0] border-b border-[#cbd5e1] items-center">
                         <input
                           autoFocus
                           type="text"
@@ -418,7 +418,7 @@ export default function IssueGrid({
                             if (e.key === 'Enter')  { e.preventDefault(); editAmountRef.current?.focus(); }
                             if (e.key === 'Escape') setEditRow(null);
                           }}
-                          className="bg-[#ffffff] border border-[#dc2626] text-[#92400e] px-2 py-1 rounded text-xs outline-none"
+                          className="bg-[#ffffff] border border-[#94a3b8] focus:border-[#475569] text-[#334155] px-2 py-1 rounded text-xs outline-none"
                         />
                         {/* use editAmountRef here, NOT addAmountRef */}
                         <input
@@ -431,7 +431,7 @@ export default function IssueGrid({
                             if (e.key === 'Enter')  handleUpdateRow();
                             if (e.key === 'Escape') setEditRow(null);
                           }}
-                          className="bg-[#ffffff] border border-[#dc2626] text-[#b45309] font-bold px-2 py-1 rounded text-xs outline-none text-right
+                          className="bg-[#ffffff] border border-[#94a3b8] focus:border-[#475569] text-[#334155] font-bold px-2 py-1 rounded text-xs outline-none text-right
                             [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <div className="flex gap-1 justify-end">
@@ -440,15 +440,15 @@ export default function IssueGrid({
                             {saving ? '…' : '✓'}
                           </button>
                           <button onClick={() => setEditRow(null)}
-                            className="px-2 py-0.5 bg-[#fff7ed] hover:bg-[#ffedd5] text-[#b45309] border border-[#fecaca] rounded text-[10px] transition-colors">
+                            className="px-2 py-0.5 bg-[#f8fafc] hover:bg-[#e2e8f0] text-[#475569] border border-[#cbd5e1] rounded text-[10px] transition-colors">
                             ✕
                           </button>
                         </div>
                       </div>
                     ) : (
                       /* ── display row ── */
-                      <div className={`grid grid-cols-[1fr_110px_64px] px-3 py-1.5 border-b border-[#fecaca] items-center group transition-colors
-                        ${i % 2 === 0 ? 'bg-[#ffffff]' : 'bg-[#fff7f7]'} hover:bg-[#fff1f2]`}>
+                      <div className={`grid grid-cols-[1fr_110px_64px] px-3 py-1.5 border-b border-[#cbd5e1] items-center group transition-colors
+                        ${i % 2 === 0 ? 'bg-[#ffffff]' : 'bg-[#f8fafc]'} hover:bg-[#e2e8f0]`}>
                         <span className="text-[#b91c1c] text-xs truncate">{row.description}</span>
                         <span className="text-right text-[#b45309] text-xs font-semibold">
                           රු. {Number(row.amount).toFixed(2)}
@@ -457,7 +457,7 @@ export default function IssueGrid({
                           <button onClick={() => setEditRow({ ...row })}
                             className="px-1.5 py-0.5 bg-[#ffedd5] hover:bg-[#fed7aa] text-[#b45309] border border-[#fecaca] rounded text-[10px]">✎</button>
                           <button onClick={() => row.id && onDeleteBillRow(row.id)}
-                            className="px-1.5 py-0.5 bg-[#fef2f2] hover:bg-[#fee2e2] text-[#dc2626] rounded text-[10px]">✕</button>
+                            className="px-1.5 py-0.5 bg-[#f8fafc] hover:bg-[#e2e8f0] text-[#dc2626] border border-[#cbd5e1] rounded text-[10px]">✕</button>
                         </div>
                       </div>
                     )}
@@ -466,9 +466,9 @@ export default function IssueGrid({
 
                 {/* sub-total */}
                 {billRowsTotal !== 0 && (
-                  <div className="grid grid-cols-[1fr_110px_64px] px-3 py-1.5 bg-[#ffffff] border-t border-[#fecaca]">
-                    <span className="text-[#dc2626] text-[10px] uppercase tracking-widest font-bold">එකතුව</span>
-                    <span className="text-right text-[#dc2626] text-xs font-bold">රු. {billRowsTotal.toFixed(2)}</span>
+                  <div className="grid grid-cols-[1fr_110px_64px] px-3 py-1.5 bg-[#e2e8f0] border-t border-[#cbd5e1]">
+                    <span className="text-[#475569] text-[10px] uppercase tracking-widest font-bold">එකතුව</span>
+                    <span className="text-right text-[#475569] text-xs font-bold">රු. {billRowsTotal.toFixed(2)}</span>
                     <span />
                   </div>
                 )}
@@ -476,29 +476,29 @@ export default function IssueGrid({
             )}
 
             {/* ── source selector — placed right above the add-row form ── */}
-            <div className="flex items-center gap-4 mb-2 px-1 py-1.5 bg-[#ffffff] border border-[#fecaca] rounded">
-              <span className="text-[#dc2626] text-[10px] uppercase tracking-widest font-bold whitespace-nowrap">
+            <div className="flex items-center gap-4 mb-2 px-2 py-1.5 bg-[#e2e8f0] border-2 border-black rounded">
+              <span className="text-black text-xs uppercase tracking-widest font-extrabold whitespace-nowrap">
                 අඩු කරන්නේ:
               </span>
-              <label className="flex items-center gap-1 cursor-pointer">
+              <label className="flex items-center gap-1 cursor-pointer bg-white border-2 border-black rounded px-2 py-1">
                 <input
                   type="radio"
                   name="extraSource"
                   checked={extraSource === 'commission'}
                   onChange={() => onExtraSourceChange('commission')}
-                  className="accent-[#dc2626]"
+                  className="accent-black"
                 />
-                <span className="text-[#b91c1c] text-xs">කොමිස් මුදලින්</span>
+                <span className="text-black text-xs font-semibold">කොමිස් මුදලින්</span>
               </label>
-              <label className="flex items-center gap-1 cursor-pointer">
+              <label className="flex items-center gap-1 cursor-pointer bg-white border-2 border-black rounded px-2 py-1">
                 <input
                   type="radio"
                   name="extraSource"
                   checked={extraSource === 'sale'}
                   onChange={() => onExtraSourceChange('sale')}
-                  className="accent-[#dc2626]"
+                  className="accent-black"
                 />
-                <span className="text-[#b91c1c] text-xs">විකුනුම් මුදලින්</span>
+                <span className="text-black text-xs font-semibold">විකුනුම් මුදලින්</span>
               </label>
             </div>
 
@@ -514,10 +514,10 @@ export default function IssueGrid({
                   if (e.key === 'Tab')   { e.preventDefault(); addAmountRef.current?.focus(); }
                   if (e.key === 'Enter') { e.preventDefault(); addAmountRef.current?.focus(); }
                 }}
-                className="flex-1 bg-[#ffffff] border border-[#fecaca] focus:border-[#dc2626] text-[#92400e] px-3 py-1.5 rounded text-xs outline-none placeholder-[#94a3b8] transition-colors"
+                className="flex-1 bg-[#ffffff] border-2 border-black focus:border-black text-black px-3 py-1.5 rounded text-xs outline-none placeholder-[#64748b] transition-colors"
               />
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[#dc2626] text-[10px] whitespace-nowrap font-semibold">රු.</span>
+                <span className="text-black text-[10px] whitespace-nowrap font-bold">රු.</span>
                 {/* use addAmountRef here, NOT editAmountRef */}
                 <input
                   ref={addAmountRef}
@@ -527,7 +527,7 @@ export default function IssueGrid({
                   onChange={e => setNewRow(r => ({ ...r, amount: e.target.value }))}
                   onFocus={e => e.target.select()}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddRow(); }}
-                  className="w-28 bg-[#ffffff] border border-[#fecaca] focus:border-[#dc2626] text-[#b45309] font-semibold px-2 py-1.5 rounded text-xs outline-none text-right placeholder-[#94a3b8] transition-colors
+                  className="w-28 bg-[#ffffff] border-2 border-black focus:border-black text-black font-bold px-2 py-1.5 rounded text-xs outline-none text-right placeholder-[#64748b] transition-colors
                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
