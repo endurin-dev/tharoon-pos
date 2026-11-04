@@ -168,6 +168,7 @@ export default function IssueGrid({
   const [saving,     setSaving]     = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const [editRow,    setEditRow]    = useState<BillRow | null>(null);
+  const commissionChargePending = useRef(false);
 
   // ── two separate refs, one per input context ──────────────────────────────
   const descRef       = useRef<HTMLInputElement>(null);
@@ -200,6 +201,38 @@ export default function IssueGrid({
     resetNew();
   };
 
+  const handleCommissionSourceChange = async () => {
+    onExtraSourceChange('commission');
+
+    const chargeExists = billRows.some(
+      row => row.description === 'අමතර ගාස්තු' && Number(row.qty) === 1 && Number(row.amount) === 100,
+    );
+    if (chargeExists || commissionChargePending.current) return;
+
+    commissionChargePending.current = true;
+    try {
+      let sid = sessionId;
+
+      if (!sid) {
+        setAutoSaving(true);
+        sid = await onAutoSave();
+        if (!sid) return;
+      }
+
+      setSaving(true);
+      await onSaveBillRow({
+        description: 'අමතර ගාස්තු',
+        qty: 1,
+        amount: 100,
+        sort_order: billRows.length,
+      }, sid);
+    } finally {
+      commissionChargePending.current = false;
+      setAutoSaving(false);
+      setSaving(false);
+    }
+  };
+
   const handleUpdateRow = async () => {
     if (!editRow || !editRow.description.trim()) return;
     setSaving(true);
@@ -220,11 +253,16 @@ export default function IssueGrid({
       totals.morningReturnedCost -= item.morning_returned_qty * item.effective_cost;
       totals.eveningCost += item.evening_qty * item.effective_cost;
       totals.returnedCost -= item.returned_qty * item.effective_cost;
+      totals.morningSelling += item.morning_qty * item.effective_selling;
+      totals.morningReturnedSelling -= item.morning_returned_qty * item.effective_selling;
+      totals.eveningSelling += item.evening_qty * item.effective_selling;
+      totals.returnedSelling -= item.returned_qty * item.effective_selling;
     });
     return totals;
   }, {
     morning: 0, morningReturned: 0, evening: 0, returned: 0, qts: 0,
     morningCost: 0, morningReturnedCost: 0, eveningCost: 0, returnedCost: 0,
+    morningSelling: 0, morningReturnedSelling: 0, eveningSelling: 0, returnedSelling: 0,
   });
 
   return (
@@ -381,24 +419,20 @@ export default function IssueGrid({
           <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-black">
             <span className="text-[10px] leading-tight text-center">උදේ ප්‍රමාණ</span>
             <span>{quantityTotals.morning}</span>
-            <span className="text-lg font-black">{quantityTotals.morningCost.toFixed(2)}</span>
           </div>
           <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-[#c2410c]">
             <span className="text-[10px] leading-tight text-center">උදේ ආපසු</span>
             <span>{quantityTotals.morningReturned}</span>
-            <span className="text-lg font-black">{Math.abs(quantityTotals.morningReturnedCost).toFixed(2)}</span>
           </div>
           {sessionType === 'full_day' && (
             <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-black">
               <span className="text-[10px] leading-tight text-center">සවස ප්‍රමාණ</span>
               <span>{quantityTotals.evening}</span>
-              <span className="text-lg font-black">{quantityTotals.eveningCost.toFixed(2)}</span>
             </div>
           )}
           <div className="flex flex-col items-center justify-center border-r border-[#94a3b8] px-1 py-1 text-2xl font-black text-[#c2410c]">
             <span className="text-[10px] leading-tight text-center">සවස ආපසු</span>
             <span>{quantityTotals.returned}</span>
-            <span className="text-lg font-black">{Math.abs(quantityTotals.returnedCost).toFixed(2)}</span>
           </div>
           <div className="border-r border-[#94a3b8]" />
           <div className="border-r border-[#94a3b8]" />
@@ -416,6 +450,40 @@ export default function IssueGrid({
             <span className="text-[#64748b]">/</span>
             <span className="text-[#15803d]">{grandTotalSelling.toFixed(2)}</span>
           </div>
+        </div>
+        <div
+          className="grid items-center border-t border-[#94a3b8] bg-white text-lg font-bold"
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          <div className="col-span-2 px-2 py-1 text-[#b45309]">කොමිස් මුදලට</div>
+          <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#b45309]">{quantityTotals.morningCost.toFixed(2)}</div>
+          <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#b45309]">{Math.abs(quantityTotals.morningReturnedCost).toFixed(2)}</div>
+          {sessionType === 'full_day' && (
+            <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#b45309]">{quantityTotals.eveningCost.toFixed(2)}</div>
+          )}
+          <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#b45309]">{Math.abs(quantityTotals.returnedCost).toFixed(2)}</div>
+          <div className="border-r border-[#cbd5e1]" />
+          <div className="border-r border-[#cbd5e1]" />
+          <div className="border-r border-[#cbd5e1]" />
+          <div className="border-r border-[#cbd5e1]" />
+          <div />
+        </div>
+        <div
+          className="grid items-center border-t border-[#94a3b8] bg-white text-lg font-bold"
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          <div className="col-span-2 px-2 py-1 text-[#15803d]">විකුණුම් මුදලට</div>
+          <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#15803d]">{quantityTotals.morningSelling.toFixed(2)}</div>
+          <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#15803d]">{Math.abs(quantityTotals.morningReturnedSelling).toFixed(2)}</div>
+          {sessionType === 'full_day' && (
+            <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#15803d]">{quantityTotals.eveningSelling.toFixed(2)}</div>
+          )}
+          <div className="border-r border-[#cbd5e1] px-1 py-1 text-center text-[#15803d]">{Math.abs(quantityTotals.returnedSelling).toFixed(2)}</div>
+          <div className="border-r border-[#cbd5e1]" />
+          <div className="border-r border-[#cbd5e1]" />
+          <div className="border-r border-[#cbd5e1]" />
+          <div className="border-r border-[#cbd5e1]" />
+          <div />
         </div>
       </div>
 
@@ -548,7 +616,7 @@ export default function IssueGrid({
                   type="radio"
                   name="extraSource"
                   checked={extraSource === 'commission'}
-                  onChange={() => onExtraSourceChange('commission')}
+                  onChange={handleCommissionSourceChange}
                   className="accent-black"
                 />
                 <span className="text-black text-xs font-semibold">කොමිස් මුදලින්</span>

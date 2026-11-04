@@ -102,24 +102,24 @@ export default function BillModal({
       border: `1px solid ${value < 0 ? '#c00' : accentColor}`,
       borderRadius: '3px',
       background: '#fff',
-      padding: '1mm 1mm',
+      padding: '2.5mm 1.5mm',
       textAlign: 'center',
     }}>
       <div style={{
-        fontSize: '6.5pt', fontWeight: 'bold', color: '#333',
-        letterSpacing: '0.2px', marginBottom: '0.5mm',
+        fontSize: '8pt', fontWeight: 'bold', color: '#333',
+        letterSpacing: '0.3px', marginBottom: '1mm',
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: '11pt', fontWeight: 900, lineHeight: 1,
+        fontSize: '16pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
         color: value < 0 ? '#c00' : accentColor,
       }}>
         {Math.round(value)}
       </div>
       {note && (
-        <div style={{ fontSize: '6pt', fontWeight: 'bold', color: '#c00', marginTop: '0.5mm' }}>
+        <div style={{ fontSize: '7pt', fontWeight: 'bold', color: '#c00', marginTop: '1mm' }}>
           {note}
         </div>
       )}
@@ -305,17 +305,31 @@ export default function BillModal({
                 </span>
               </div>
 
-              {/* Return totals — quantity + cost value, only shown if any
-                  returns exist for this session. Value is enlarged. */}
-              {(morningReturnedQty > 0 || eveningReturnedQty > 0) && (
-                <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
-                  {morningReturnedQty > 0 && returnBox('උදේ ආපසු', morningReturnedQty, morningReturnedCost)}
-                  {eveningReturnedQty > 0 && returnBox('සවස ආපසු', eveningReturnedQty, eveningReturnedCost)}
+              {/* ── FINAL BALANCE ─────────────────────────────────────────── */}
+              <div style={{
+                border: '2.5px solid #000',
+                borderRadius: '3px',
+                margin: '2mm 0',
+                padding: '2mm',
+                textAlign: 'center',
+                background: '#f5f5f5',
+              }}>
+                <div style={{
+                  fontSize: '8.5pt', fontWeight: 'bold', letterSpacing: '0.5px',
+                  color: '#333', marginBottom: '1mm',
+                }}>
+                  අවසාන කොමිස් (රු.)
                 </div>
-              )}
+                <div style={{
+                  fontSize: '22pt', fontWeight: 900, lineHeight: 1,
+                  fontFamily: 'Arial Black, Arial, sans-serif',
+                  color: finalBalance >= 0 ? '#000' : '#c00',
+                }}>
+                  {Math.round(finalBalance)}
+                </div>
+              </div>
 
-              {/* Individual total boxes — now compact.
-                  These carry the extras adjustment (see note under each). */}
+              {/* Individual total boxes carry the extras adjustment. */}
               <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
                 {bigTotalBox(
                   'පිරිවැය (කොමිස්)',
@@ -384,34 +398,13 @@ export default function BillModal({
               </>
             )}
 
-            {/* ── FINAL BALANCE ──────────────────────────────────────────────
-                අවසාන කොමිස් is intentionally the raw grandSell − grandCost.
-                It does NOT reflect adjustedCost/adjustedSell, so adding or
-                removing extra charges never changes this number — extras
-                only ever show up in the two boxes above.
-                This is the headline number on the receipt: biggest, boldest. */}
-            <div style={{
-              border: '2.5px solid #000',
-              borderRadius: '3px',
-              margin: '2mm 0',
-              padding: '2mm',
-              textAlign: 'center',
-              background: '#f5f5f5',
-            }}>
-              <div style={{
-                fontSize: '8.5pt', fontWeight: 'bold', letterSpacing: '0.5px',
-                color: '#333', marginBottom: '1mm',
-              }}>
-                අවසාන කොමිස් (රු.)
+            {/* Return totals moved below the bill details, before the footer. */}
+            {(morningReturnedQty > 0 || eveningReturnedQty > 0) && (
+              <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
+                {morningReturnedQty > 0 && returnBox('උදේ ආපසු', morningReturnedQty, morningReturnedCost)}
+                {eveningReturnedQty > 0 && returnBox('සවස ආපසු', eveningReturnedQty, eveningReturnedCost)}
               </div>
-              <div style={{
-                fontSize: '22pt', fontWeight: 900, lineHeight: 1,
-                fontFamily: 'Arial Black, Arial, sans-serif',
-                color: finalBalance >= 0 ? '#000' : '#c00',
-              }}>
-                {Math.round(finalBalance)}
-              </div>
-            </div>
+            )}
 
             {/* ── FOOTER ── */}
             <div style={{ textAlign: 'center', fontSize: '7.5pt', color: '#555', paddingTop: '1mm', borderTop: '1px dashed #000' }}>
@@ -419,6 +412,96 @@ export default function BillModal({
               <div style={{ marginTop: '1px', fontSize: '9pt', fontWeight: 'bold', letterSpacing: '2px' }}>
                 * * * ස්තුතියි * * *
               </div>
+            </div>
+            <div style={{
+              minHeight: '14mm',
+              marginTop: '2mm',
+              padding: '1mm 2mm',
+              border: '1px solid #999',
+            }}>
+              <div style={{ fontSize: '7pt', fontWeight: 'bold', color: '#555' }}>
+                අමතර සටහන්:
+              </div>
+            </div>
+
+            {/* ── DETACHABLE TOTALS SLIP ── */}
+            <div style={{
+              marginTop: '8mm',
+              paddingTop: '6mm',
+              borderTop: '2px dashed #000',
+            }}>
+              <div style={{
+                textAlign: 'center',
+                fontSize: '7pt',
+                fontWeight: 'bold',
+                letterSpacing: '1px',
+                marginBottom: '4mm',
+              }}>
+                ✂ මෙතැනින් වෙන් කරන්න ✂
+              </div>
+              <div style={{ display: 'flex', gap: '2mm' }}>
+                {bigTotalBox(
+                  'පිරිවැය (කොමිස්)',
+                  adjustedCost,
+                  '#b45309',
+                  extraSource === 'commission' && billRowsTotal !== 0 ? `+අතිරේක ${Math.round(billRowsTotal)}` : undefined
+                )}
+                {bigTotalBox(
+                  'විකිණුම (පඩි)',
+                  adjustedSell,
+                  '#15803d',
+                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined
+                )}
+              </div>
+              <div style={{ fontSize: '8pt', fontWeight: 'bold', margin: '2mm 0 1mm' }}>
+                අතිරේක ({extraSource === 'sale' ? 'විකිණුම (පඩි) වෙතින්' : 'පිරිවැය (කොමිස්) වෙතට'}):
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr',
+                border: '1px solid #000',
+                background: '#f0f0f0',
+              }}>
+                <span style={{ fontSize: '7pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
+                  විස්තරය
+                </span>
+                <span style={{ fontSize: '7pt', fontWeight: 'bold', textAlign: 'right', padding: '1px 3px' }}>
+                  මුදල
+                </span>
+              </div>
+              {billRows.map((row, i) => {
+                const amount = Number(row.qty) * Number(row.amount);
+                return (
+                  <div key={`detachable-${row.id ?? i}`} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr',
+                    borderLeft: '1px solid #ddd',
+                    borderRight: '1px solid #ddd',
+                    borderBottom: '1px dotted #aaa',
+                    padding: '1px 0',
+                  }}>
+                    <span style={{ fontSize: '8pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
+                      {row.description}
+                    </span>
+                    <span style={{ fontSize: '8pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px', color: amount < 0 ? '#c00' : undefined }}>
+                      {Math.round(amount)}
+                    </span>
+                  </div>
+                );
+              })}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '8pt',
+                fontWeight: 'bold',
+                borderTop: '2px solid #000',
+                padding: '1px 0',
+                color: billRowsTotal < 0 ? '#c00' : undefined,
+              }}>
+                <span>අතිරේක මුළු:</span>
+                <span>රු. {Math.round(billRowsTotal)}</span>
+              </div>
+              <div style={{ borderTop: '2px dashed #000', marginTop: '2mm' }} />
             </div>
           </div>
 
