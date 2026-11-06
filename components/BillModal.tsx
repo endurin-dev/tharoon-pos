@@ -169,12 +169,12 @@ export default function BillModal({
 
             {/* ── SESSION INFO ── */}
             {[
-              ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: 'long', year: 'numeric' })],
+              ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: '2-digit', year: 'numeric' })],
               ['සේවකයා', employee?.name || '-'],
               ['ගෙවීම', paymentStatus === 'paid' ? 'ගෙවා ඇත' : 'ගෙවා නැත'],
             ].map(([label, value]) => (
               <div key={label} style={{
-                display: 'flex', justifyContent: 'space-between',
+                display: 'grid', gridTemplateColumns: '25% 1fr',
                 fontSize: '7.5pt', lineHeight: 1, padding: '0',
               }}>
                 <span style={{ fontWeight: 'bold' }}>{label}:</span>
@@ -307,7 +307,9 @@ export default function BillModal({
               {/* Qty totals grid — raw, unadjusted sums straight from items */}
               <div style={{
                 display: 'grid', gridTemplateColumns: cols,
-                borderBottom: '1px solid #ccc', background: '#fafafa',
+                borderBottom: '3px solid #000',
+                marginBottom: '1mm',
+                background: '#fafafa',
               }}>
                 <span style={{
                   fontSize: '7pt', lineHeight: 1, color: '#555', padding: '0 3px',
@@ -574,7 +576,7 @@ export default function BillModal({
                   'විකිණුම (පඩි)',
                   adjustedSell,
                   '#15803d',
-                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined,
+                  undefined,
                   extraSource === 'sale'
                 )}
               </div>

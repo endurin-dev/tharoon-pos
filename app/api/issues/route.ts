@@ -48,7 +48,22 @@ export async function GET(req: NextRequest) {
     }
 
     const rows = await query(`
-      SELECT s.*, e.name as employee_name, v.vehicle_number
+      SELECT s.*, e.name as employee_name, v.vehicle_number,
+             COALESCE((
+               SELECT SUM((ii.morning_qty - ii.morning_returned_qty + ii.evening_qty - ii.returned_qty) * ii.cost_price)
+               FROM issue_items ii
+               WHERE ii.session_id = s.id
+             ), 0) as summary_total_cost,
+             COALESCE((
+               SELECT SUM((ii.morning_qty - ii.morning_returned_qty + ii.evening_qty - ii.returned_qty) * ii.selling_price)
+               FROM issue_items ii
+               WHERE ii.session_id = s.id
+             ), 0) as summary_total_selling,
+             COALESCE((
+               SELECT SUM(br.qty * br.amount)
+               FROM issue_bill_rows br
+               WHERE br.session_id = s.id
+             ), 0) as bill_rows_total
       FROM issue_sessions s
       JOIN employees e ON e.id = s.employee_id
       LEFT JOIN vehicles v ON v.id = s.vehicle_id
@@ -57,8 +72,40 @@ export async function GET(req: NextRequest) {
     `, date ? [date] : []);
 
     return NextResponse.json(rows);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'සැසි තොරතුරු ලබාගත නොහැක';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const sessionId = Number(body.session_id);
+    const paymentStatus = body.payment_status;
+
+    if (!Number.isInteger(sessionId) || sessionId <= 0) {
+      return NextResponse.json({ error: 'වලංගු සැසි අංකයක් අවශ්‍යයි' }, { status: 400 });
+    }
+    if (paymentStatus !== 'paid' && paymentStatus !== 'unpaid') {
+      return NextResponse.json({ error: 'වලංගු ගෙවීම් තත්ත්වයක් තෝරන්න' }, { status: 400 });
+    }
+
+    const session = await queryOne<{ id: number; payment_status: string }>(
+      `UPDATE issue_sessions
+       SET payment_status=$1, updated_at=NOW()
+       WHERE id=$2
+       RETURNING id, payment_status`,
+      [paymentStatus, sessionId]
+    );
+    if (!session) {
+      return NextResponse.json({ error: 'සැසිය හමු නොවීය' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, session });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'ගෙවීම් තත්ත්වය යාවත්කාලීන කළ නොහැක';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -123,8 +170,14 @@ export async function POST(req: NextRequest) {
 
     await client.query(`
       UPDATE issue_sessions s SET
-        total_cost    = (SELECT COALESCE(SUM(total_cost),0)    FROM issue_items WHERE session_id=s.id),
-        total_selling = (SELECT COALESCE(SUM(total_selling),0) FROM issue_items WHERE session_id=s.id)
+        total_cost = (
+          SELECT COALESCE(SUM((morning_qty - morning_returned_qty + evening_qty - returned_qty) * cost_price), 0)
+          FROM issue_items WHERE session_id=s.id
+        ),
+        total_selling = (
+          SELECT COALESCE(SUM((morning_qty - morning_returned_qty + evening_qty - returned_qty) * selling_price), 0)
+          FROM issue_items WHERE session_id=s.id
+        )
       WHERE s.id=$1
     `, [sessionId]);
 
@@ -132,9 +185,10 @@ export async function POST(req: NextRequest) {
 
     const updatedSession = await queryOne('SELECT * FROM issue_sessions WHERE id=$1', [sessionId]);
     return NextResponse.json({ success: true, session: updatedSession, session_id: sessionId });
-  } catch (e: any) {
+  } catch (e: unknown) {
     await client.query('ROLLBACK');
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const message = e instanceof Error ? e.message : 'සැසිය සුරැකිය නොහැක';
+    return NextResponse.json({ error: message }, { status: 500 });
   } finally {
     client.release();
   }
@@ -149,7 +203,8 @@ export async function DELETE(req: NextRequest) {
       await query('DELETE FROM issue_sessions WHERE id=$1', [session_id]);
     }
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'සැසිය මකාදැමිය නොහැක';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
