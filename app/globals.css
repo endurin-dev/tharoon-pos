@@ -28,10 +28,11 @@ input[type="number"] {
     visibility: visible;
   }
   #bill-content {
-    position: fixed;
+    position: static !important;
     left: 0;
     top: 0;
-    width: 100%;
+    width: 76mm !important;
+    height: auto !important;
   }
 }
 

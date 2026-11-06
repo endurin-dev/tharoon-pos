@@ -142,17 +142,33 @@ export default function BillModal({
           @page { size: 80mm auto; margin: 0; }
           body * { visibility: hidden; }
           #bill-content, #bill-content * { visibility: visible; }
+          .bill-modal-overlay,
+          .bill-modal-panel {
+            position: static !important;
+            display: block !important;
+            width: auto !important;
+            max-width: none !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+          }
           #bill-content {
-            position: fixed; top: 0; left: 0;
-            width: 76mm; padding: 2mm 3mm;
+            position: static !important;
+            width: 76mm !important;
+            height: auto !important;
+            margin: 0 auto !important;
+            padding: 2mm 3mm !important;
             border: none !important; box-shadow: none !important;
           }
           .no-print { display: none !important; }
         }
       `}</style>
 
-      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bg-white text-black rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="bill-modal-overlay fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bill-modal-panel bg-white text-black rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
           <div id="bill-content" style={{
             width: '76mm', margin: '0 auto',
