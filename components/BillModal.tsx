@@ -212,16 +212,16 @@ export default function BillModal({
 
           {/* ── SESSION INFO ── */}
           {[
-            ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: 'long', year: 'numeric' })],
+            ['දිනය', new Date(`${date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })],
             ['සේවකයා', employee?.name || '-'],
             ['ගෙවීම', paymentStatus === 'paid' ? 'ගෙවා ඇත' : 'ගෙවා නැත'],
           ].map(([label, value]) => (
             <div key={label} style={{
-              display: 'flex', justifyContent: 'space-between', gap: '2mm',
+              display: 'grid', gridTemplateColumns: '25% 1fr', gap: '1mm',
               fontSize: '7.5pt', lineHeight: 1.1, padding: '0',
             }}>
               <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{label}:</span>
-              <span style={{ fontWeight: label === 'ගෙවීම' ? 'bold' : 'normal', textAlign: 'right' }}>{value}</span>
+              <span style={{ fontWeight: label === 'ගෙවීම' ? 'bold' : 'normal', textAlign: 'left' }}>{value}</span>
             </div>
           ))}
 
@@ -325,7 +325,9 @@ export default function BillModal({
               {/* Totals grid — raw, unadjusted sums straight from items */}
               <div style={{
                 display: 'grid', gridTemplateColumns: cols,
-                borderBottom: '1px solid #ccc', background: '#fafafa',
+                borderBottom: '3px solid #000',
+                marginBottom: '1mm',
+                background: '#fafafa',
               }}>
                 <span style={{
                   fontSize: '7pt', lineHeight: 1, color: '#555', padding: '0 3px',
