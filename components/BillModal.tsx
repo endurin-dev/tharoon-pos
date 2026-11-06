@@ -313,41 +313,41 @@ export default function BillModal({
                 borderBottom: '1px solid #ccc', background: '#fafafa',
               }}>
                 <span style={{
-                  fontSize: '7pt', color: '#555', padding: '1px 3px',
+                  fontSize: '7pt', lineHeight: 1, color: '#555', padding: '0 3px',
                   borderRight: '1px solid #ccc',
                 }}>
                   එකතු
                 </span>
                 <span style={{
-                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontSize: '10pt', lineHeight: 1, fontWeight: 900, textAlign: 'right',
                   fontFamily: 'Arial Black, Arial, sans-serif',
-                  padding: '1px 2px', borderRight: '1px solid #ccc',
+                  padding: '0 2px', borderRight: '1px solid #ccc',
                   color: morningReturnedCost > 0 ? '#c00' : '#666',
                 }}>
                   {morningReturnedCost > 0 ? Math.round(morningReturnedCost) : '-'}
                 </span>
                 <span style={{ borderRight: '1px solid #ccc' }} />
                 <span style={{
-                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontSize: '10pt', lineHeight: 1, fontWeight: 900, textAlign: 'right',
                   fontFamily: 'Arial Black, Arial, sans-serif',
-                  padding: '1px 2px', borderRight: '1px solid #ccc',
+                  padding: '0 2px', borderRight: '1px solid #ccc',
                   color: eveningReturnedCost > 0 ? '#c00' : '#666',
                 }}>
                   {eveningReturnedCost > 0 ? Math.round(eveningReturnedCost) : '-'}
                 </span>
                 <span style={{ borderRight: '1px solid #ccc' }} />
                 <span style={{
-                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontSize: '10pt', lineHeight: 1, fontWeight: 900, textAlign: 'right',
                   fontFamily: 'Arial Black, Arial, sans-serif',
-                  padding: '1px 2px', borderRight: '1px solid #ccc',
+                  padding: '0 2px', borderRight: '1px solid #ccc',
                   color: grandCost < 0 ? '#c00' : '#666',
                 }}>
                   {Math.round(grandCost)}
                 </span>
                 <span style={{
-                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontSize: '10pt', lineHeight: 1, fontWeight: 900, textAlign: 'right',
                   fontFamily: 'Arial Black, Arial, sans-serif',
-                  padding: '1px 2px',
+                  padding: '0 2px',
                   color: grandSell < 0 ? '#c00' : undefined,
                 }}>
                   {Math.round(grandSell)}
@@ -366,8 +366,9 @@ export default function BillModal({
                     <span style={{
                       gridColumn: '1 / span 5',
                       fontSize: '7pt',
+                      lineHeight: 1,
                       fontWeight: 'bold',
-                      padding: '1px 3px',
+                      padding: '0 3px',
                       borderRight: '1px solid #ddd',
                     }}>
                       {row.description}
@@ -380,10 +381,11 @@ export default function BillModal({
                         <span style={{
                           display: 'block',
                           fontSize: '10pt',
+                          lineHeight: 1,
                           fontWeight: 900,
                           fontFamily: 'Arial Black, Arial, sans-serif',
                           textAlign: 'right',
-                          padding: '1px 2px',
+                          padding: '0 2px',
                           color: amount < 0 ? '#c00' : '#b45309',
                         }}>
                           {Math.round(amount)}
@@ -397,10 +399,11 @@ export default function BillModal({
                         <span style={{
                           display: 'block',
                           fontSize: '10pt',
+                          lineHeight: 1,
                           fontWeight: 900,
                           fontFamily: 'Arial Black, Arial, sans-serif',
                           textAlign: 'right',
-                          padding: '1px 2px',
+                          padding: '0 2px',
                           color: amount < 0 ? '#c00' : '#15803d',
                         }}>
                           {Math.round(amount)}
@@ -421,8 +424,9 @@ export default function BillModal({
                   <span style={{
                     gridColumn: '1 / span 5',
                     fontSize: '7pt',
+                    lineHeight: 1,
                     fontWeight: 'bold',
-                    padding: '1px 3px',
+                    padding: '0 3px',
                     borderRight: '1px solid #ccc',
                   }}>
                     අතිරේක මුළු
@@ -430,20 +434,22 @@ export default function BillModal({
                   <span style={{
                     borderRight: '1px solid #ccc',
                     fontSize: '10pt',
+                    lineHeight: 1,
                     fontWeight: 900,
                     fontFamily: 'Arial Black, Arial, sans-serif',
                     textAlign: 'right',
-                    padding: '1px 2px',
+                    padding: '0 2px',
                     color: extraSource === 'commission' && billRowsTotal < 0 ? '#c00' : '#b45309',
                   }}>
                     {extraSource === 'commission' ? `(${Math.round(billRowsTotal)})` : ''}
                   </span>
                   <span style={{
                     fontSize: '10pt',
+                    lineHeight: 1,
                     fontWeight: 900,
                     fontFamily: 'Arial Black, Arial, sans-serif',
                     textAlign: 'right',
-                    padding: '1px 2px',
+                    padding: '0 2px',
                     color: extraSource === 'sale' && billRowsTotal < 0 ? '#c00' : '#15803d',
                   }}>
                     {extraSource === 'sale' ? `(${Math.round(billRowsTotal)})` : ''}
@@ -459,18 +465,20 @@ export default function BillModal({
                 <span style={{
                   gridColumn: '1 / span 5',
                   fontSize: '10pt',
+                  lineHeight: 1,
                   fontWeight: 900,
-                  padding: '2px 3px',
+                  padding: '0 3px',
                   borderRight: '1px solid #ccc',
                 }}>
                   ගෙවිය යුතු මුදල
                 </span>
                 <span style={{
                   fontSize: '14pt',
+                  lineHeight: 1,
                   fontWeight: 900,
                   fontFamily: 'Arial Black, Arial, sans-serif',
                   textAlign: 'right',
-                  padding: '2px 2px',
+                  padding: '0 2px',
                   color: extraSource === 'commission' && adjustedCost < 0 ? '#c00' : '#b45309',
                 }}>
                   {extraSource === 'commission' && (
@@ -479,7 +487,7 @@ export default function BillModal({
                       alignItems: 'center',
                       justifyContent: 'center',
                       minWidth: '10mm',
-                      height: '8mm',
+                      height: '6mm',
                       padding: '0 1.5mm',
                       boxSizing: 'border-box',
                       border: '2px solid #000',
@@ -491,10 +499,11 @@ export default function BillModal({
                 </span>
                 <span style={{
                   fontSize: '14pt',
+                  lineHeight: 1,
                   fontWeight: 900,
                   fontFamily: 'Arial Black, Arial, sans-serif',
                   textAlign: 'right',
-                  padding: '2px 2px',
+                  padding: '0 2px',
                   color: extraSource === 'sale' && adjustedSell < 0 ? '#c00' : '#15803d',
                 }}>
                   {extraSource === 'sale' && (
@@ -503,7 +512,7 @@ export default function BillModal({
                       alignItems: 'center',
                       justifyContent: 'center',
                       minWidth: '10mm',
-                      height: '8mm',
+                      height: '6mm',
                       padding: '0 1.5mm',
                       boxSizing: 'border-box',
                       border: '2px solid #000',
@@ -520,19 +529,19 @@ export default function BillModal({
               <div style={{
                 border: '2.5px solid #000',
                 borderRadius: '3px',
-                margin: '1mm 0',
-                padding: '1mm',
+                margin: '0.5mm 0',
+                padding: '0.5mm 1mm',
                 textAlign: 'center',
                 background: '#f5f5f5',
               }}>
                 <div style={{
-                  fontSize: '7.5pt', fontWeight: 'bold', letterSpacing: '0.3px',
-                  color: '#333', marginBottom: '0.5mm',
+                  fontSize: '7pt', fontWeight: 'bold', letterSpacing: '0.3px',
+                  color: '#333', marginBottom: '0',
                 }}>
                   අවසාන කොමිස් (රු.)
                 </div>
                 <div style={{
-                  fontSize: '18pt', fontWeight: 900, lineHeight: 1,
+                  fontSize: '16pt', fontWeight: 900, lineHeight: 1,
                   fontFamily: 'Arial Black, Arial, sans-serif',
                   color: finalBalance >= 0 ? '#000' : '#c00',
                 }}>
