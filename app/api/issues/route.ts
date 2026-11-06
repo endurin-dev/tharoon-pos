@@ -66,6 +66,11 @@ export async function POST(req: NextRequest) {
   const client = await pool.connect();
   try {
     const { session, items } = await req.json();
+    const extraSource = session.extra_source === 'sale' ? 'sale' : 'commission';
+    await client.query(
+      `ALTER TABLE issue_sessions
+       ADD COLUMN IF NOT EXISTS extra_source VARCHAR(20) NOT NULL DEFAULT 'commission'`
+    );
     await client.query('BEGIN');
 
     const existing = await client.query(
@@ -77,15 +82,19 @@ export async function POST(req: NextRequest) {
     if (existing.rows.length > 0) {
       sessionId = existing.rows[0].id;
       await client.query(
-        `UPDATE issue_sessions SET vehicle_id=$1, session_type=$2, payment_status=$3, updated_at=NOW()
-         WHERE id=$4`,
-        [session.vehicle_id || null, session.session_type, session.payment_status, sessionId]
+        `UPDATE issue_sessions SET vehicle_id=$1, session_type=$2, payment_status=$3,
+         extra_source=$4, updated_at=NOW() WHERE id=$5`,
+        [session.vehicle_id || null, session.session_type, session.payment_status, extraSource, sessionId]
       );
     } else {
       const res = await client.query(
-        `INSERT INTO issue_sessions (session_date, employee_id, vehicle_id, session_type, payment_status)
-         VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-        [session.session_date, session.employee_id, session.vehicle_id || null, session.session_type, session.payment_status || 'unpaid']
+        `INSERT INTO issue_sessions
+           (session_date, employee_id, vehicle_id, session_type, payment_status, extra_source)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [
+          session.session_date, session.employee_id, session.vehicle_id || null,
+          session.session_type, session.payment_status || 'unpaid', extraSource,
+        ]
       );
       sessionId = res.rows[0].id;
     }

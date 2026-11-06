@@ -59,6 +59,9 @@ CREATE TABLE IF NOT EXISTS issue_sessions (
   UNIQUE(session_date, employee_id)
 );
 
+ALTER TABLE issue_sessions
+  ADD COLUMN IF NOT EXISTS extra_source VARCHAR(20) NOT NULL DEFAULT 'commission';
+
 CREATE TABLE IF NOT EXISTS issue_items (
   id SERIAL PRIMARY KEY,
   session_id INT NOT NULL REFERENCES issue_sessions(id) ON DELETE CASCADE,

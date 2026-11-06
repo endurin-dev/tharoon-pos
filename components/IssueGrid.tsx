@@ -81,7 +81,7 @@ interface IssueGridProps {
   onSaveBillRow: (row: BillRow, overrideSessionId?: number) => Promise<void>;
   onDeleteBillRow: (id: number) => Promise<void>;
   /** Called when no session exists yet; must save and return the new session_id */
-  onAutoSave: () => Promise<number | null>;
+  onAutoSave: (extraSource?: 'sale' | 'commission') => Promise<number | null>;
   /** which total extra charges are deducted from */
   extraSource: 'sale' | 'commission';
   onExtraSourceChange: (s: 'sale' | 'commission') => void;
@@ -215,7 +215,7 @@ export default function IssueGrid({
 
       if (!sid) {
         setAutoSaving(true);
-        sid = await onAutoSave();
+        sid = await onAutoSave('commission');
         if (!sid) return;
       }
 

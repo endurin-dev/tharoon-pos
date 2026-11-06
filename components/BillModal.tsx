@@ -1,11 +1,10 @@
 'use client';
 
-import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
+import { CategoryWithItems, Employee, BillRow } from '@/lib/types';
 
 interface BillModalProps {
   categories: CategoryWithItems[];
   employee: Employee | null;
-  vehicle: Vehicle | null;
   date: string;
   sessionType: string;
   paymentStatus: string;
@@ -16,28 +15,31 @@ interface BillModalProps {
 }
 
 export default function BillModal({
-  categories, employee, vehicle, date, sessionType, paymentStatus,
+  categories, employee, date, sessionType, paymentStatus,
   billRows = [], extraSource, onClose,
 }: BillModalProps) {
-  let grandCost = 0, grandSell = 0;
-  let morningReturnedQty = 0, morningReturnedCost = 0;
-  let eveningReturnedQty = 0, eveningReturnedCost = 0;
   const billItems = categories.flatMap(cat =>
     cat.items.filter(i => i.morning_qty > 0 || i.evening_qty > 0).map(item => {
       // ── Allow negative sold/cost/sell (e.g. returns exceeding issued qty)
       const sold = (item.morning_qty - item.morning_returned_qty) + item.evening_qty - item.returned_qty;
       const cost = sold * item.effective_cost;
       const sell = sold * item.effective_selling;
-      grandCost += cost;
-      grandSell += sell;
-      // ── track return quantities and their cost value ────────────────────
-      morningReturnedQty += item.morning_returned_qty;
-      morningReturnedCost += item.morning_returned_qty * item.effective_cost;
-      eveningReturnedQty += item.returned_qty;
-      eveningReturnedCost += item.returned_qty * item.effective_cost;
       return { ...item, sold, cost, sell };
     })
   );
+
+  const { grandCost, grandSell, morningReturnedCost, eveningReturnedCost } =
+    billItems.reduce((totals, item) => ({
+      grandCost: totals.grandCost + item.cost,
+      grandSell: totals.grandSell + item.sell,
+      morningReturnedCost: totals.morningReturnedCost + item.morning_returned_qty * item.effective_cost,
+      eveningReturnedCost: totals.eveningReturnedCost + item.returned_qty * item.effective_cost,
+    }), {
+      grandCost: 0,
+      grandSell: 0,
+      morningReturnedCost: 0,
+      eveningReturnedCost: 0,
+    });
 
   const billRowsTotal = billRows.reduce((s, r) => s + Number(r.qty) * Number(r.amount), 0);
 
@@ -94,7 +96,8 @@ export default function BillModal({
     label: string,
     value: number,
     accentColor: string,
-    note?: string
+    note?: string,
+    highlightValue = false
   ): React.ReactElement => (
     <div style={{
       flex: 1,
@@ -115,6 +118,13 @@ export default function BillModal({
         fontSize: '16pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
         color: value < 0 ? '#c00' : accentColor,
+        ...(highlightValue ? {
+          display: 'table',
+          margin: '0 auto',
+          border: '2px solid #000',
+          borderRadius: '50%',
+          padding: '2mm 4mm',
+        } : {}),
       }}>
         {Math.round(value)}
       </div>
@@ -123,50 +133,6 @@ export default function BillModal({
           {note}
         </div>
       )}
-    </div>
-  );
-
-  // ── Box for a return total: quantity (normal size) + cost value (large) ───
-  const returnBox = (
-    label: string,
-    qty: number,
-    costValue: number
-  ): React.ReactElement => (
-    <div style={{
-      flex: 1,
-      minWidth: 0,
-      border: '2px solid #dc2626',
-      borderRadius: '3px',
-      background: '#fff5f5',
-      padding: '3mm 1mm',
-      textAlign: 'center',
-    }}>
-      <div style={{
-        fontSize: '9.5pt', fontWeight: 'bold', color: '#7f1d1d',
-        letterSpacing: '0.3px', marginBottom: '1.5mm',
-      }}>
-        {label} <span style={{ fontWeight: 'normal', fontSize: '8pt' }}>(ප්‍රමාණය)</span>
-      </div>
-      {/* Quantity — kept at original size */}
-      <div style={{
-        fontSize: '13pt', fontWeight: 900, lineHeight: 1,
-        fontFamily: 'Arial Black, Arial, sans-serif',
-        color: '#b91c1c',
-      }}>
-        {qty}
-      </div>
-      <div style={{
-        borderTop: '1px dashed #dc2626', margin: '2mm 2mm 1.5mm',
-      }} />
-      {/* Value — enlarged */}
-      <div style={{
-        fontSize: '20pt', fontWeight: 900, lineHeight: 1,
-        fontFamily: 'Arial Black, Arial, sans-serif',
-        color: '#b91c1c',
-      }}>
-        <span style={{ fontSize: '9pt', marginRight: '1mm' }}>රු.</span>
-        {Math.round(costValue)}
-      </div>
     </div>
   );
 
@@ -206,7 +172,6 @@ export default function BillModal({
             {[
               ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: 'long', year: 'numeric' })],
               ['සේවකයා', employee?.name || '-'],
-              ['වාහනය', vehicle?.vehicle_number || '-'],
               ['සැසිය', sessionType === 'full_day' ? 'සම්පූර්ණ දිනය' : 'උදේ'],
               ['ගෙවීම', paymentStatus === 'paid' ? 'ගෙවා ඇත' : 'ගෙවා නැත'],
             ].map(([label, value]) => (
@@ -244,60 +209,144 @@ export default function BillModal({
             </div>
 
             {/* ── ITEM ROWS ── */}
-            {billItems.map((item, i) => (
-              <div key={i} style={{ borderBottom: '1px dotted #999', padding: '1px 0' }}>
-                <div style={{
-                  fontSize: '8.5pt', fontWeight: 'bold', lineHeight: '1.15',
-                  borderLeft: '1px solid #ddd', borderRight: '1px solid #ddd',
-                  padding: '0 3px',
-                }}>
-                  {item.name}
+            {categories.map(category => {
+              const categoryItems = billItems.filter(item => item.category_id === category.id);
+              if (categoryItems.length === 0) return null;
+
+              const morningReturnQty = categoryItems.reduce(
+                (sum, item) => sum + item.morning_returned_qty,
+                0,
+              );
+              const eveningReturnQty = categoryItems.reduce(
+                (sum, item) => sum + item.returned_qty,
+                0,
+              );
+              const categoryMorningQty = categoryItems.reduce((sum, item) => sum + item.morning_qty, 0);
+              const categoryEveningQty = categoryItems.reduce((sum, item) => sum + item.evening_qty, 0);
+              const categorySold = categoryItems.reduce((sum, item) => sum + item.sold, 0);
+              const categoryCost = categoryItems.reduce((sum, item) => sum + item.cost, 0);
+              const categorySell = categoryItems.reduce((sum, item) => sum + item.sell, 0);
+
+              return (
+                <div key={category.id}>
+                  <div style={{
+                    borderTop: '2px solid #000',
+                    margin: '1px 0',
+                  }}>
+                  </div>
+                  {categoryItems.map(item => {
+                        return (
+                        <div key={item.id} style={{ borderBottom: '1px dotted #999', padding: '1px 0' }}>
+                      <div style={{
+                        fontSize: '8pt', fontWeight: 'bold', lineHeight: '1.1',
+                        borderLeft: '1px solid #ddd', borderRight: '1px solid #ddd',
+                        padding: '0 3px',
+                      }}>
+                        {item.name}
+                      </div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: cols,
+                        borderLeft: '1px solid #ddd',
+                        borderRight: '1px solid #ddd',
+                        fontWeight: 700,
+                        letterSpacing: '0.3px',
+                        fontFamily: 'Helvetica, sans-serif',
+                        fontSize: '8.5pt',
+                      }}>
+                        <span style={numCell('center', false, true)}>{item.morning_qty || '-'}</span>
+                        <span style={numCell('center')} />
+                        <span style={numCell()}>{item.evening_qty || '-'}</span>
+                        <span style={numCell('center')} />
+                        <span style={numCell('center', item.sold < 0)}>{item.sold !== 0 ? item.sold : '-'}</span>
+                        <span style={{ ...numCell('right', item.cost < 0), fontWeight: 'bold' }}>{item.cost !== 0 ? Math.round(item.cost) : '-'}</span>
+                        <span style={{ ...numCell('right', item.sell < 0), fontWeight: 'bold' }}>{item.sell !== 0 ? Math.round(item.sell) : '-'}</span>
+                      </div>
+                    </div>
+                    );
+                  })}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: cols,
+                    borderLeft: '1px solid #999',
+                    borderRight: '1px solid #999',
+                    borderTop: '1px solid #777',
+                    borderBottom: '2px solid #000',
+                    background: '#f5f5f5',
+                    fontWeight: 'bold',
+                  }}>
+                    <span style={numCell('center')}>
+                      {categoryMorningQty || '-'}
+                    </span>
+                    <span style={{ ...numCell('center', morningReturnQty > 0), borderRight: '1px solid #ccc' }}>
+                      {morningReturnQty || '-'}
+                    </span>
+                    <span style={numCell('center')}>
+                      {categoryEveningQty || '-'}
+                    </span>
+                    <span style={{ ...numCell('center', eveningReturnQty > 0), borderRight: '1px solid #ccc' }}>
+                      {eveningReturnQty || '-'}
+                    </span>
+                    <span style={numCell('center', categorySold < 0)}>{categorySold || '-'}</span>
+                    <span style={{ ...numCell('right', categoryCost < 0), fontWeight: 'bold' }}>
+                      {categoryCost !== 0 ? Math.round(categoryCost) : '-'}
+                    </span>
+                    <span style={{ ...numCell('right', categorySell < 0), fontWeight: 'bold' }}>
+                      {categorySell !== 0 ? Math.round(categorySell) : '-'}
+                    </span>
+                  </div>
                 </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: cols,
-                  borderLeft: '1px solid #ddd',
-                  borderRight: '1px solid #ddd',
-                  fontWeight: 700,
-                  letterSpacing: '0.3px',
-                  fontFamily: 'Helvetica, sans-serif',
-                }}>
-                  <span style={numCell('center', false, true)}>{item.morning_qty || '-'}</span>
-                  <span style={numCell('center', item.morning_returned_qty > 0)}>{item.morning_returned_qty || '-'}</span>
-                  <span style={numCell()}>{item.evening_qty || '-'}</span>
-                  <span style={numCell('center', item.returned_qty > 0)}>{item.returned_qty || '-'}</span>
-                  <span style={numCell('center', item.sold < 0)}>{item.sold !== 0 ? item.sold : '-'}</span>
-                  <span style={{ ...numCell('right', item.cost < 0), fontWeight: 'bold' }}>{item.cost !== 0 ? Math.round(item.cost) : '-'}</span>
-                  <span style={{ ...numCell('right', item.sell < 0), fontWeight: 'bold' }}>{item.sell !== 0 ? Math.round(item.sell) : '-'}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* ── TOTALS SECTION ── */}
             <div style={{ borderTop: '2px solid #000', marginTop: '1px', paddingTop: '2px' }}>
 
+              <div style={{
+                border: '2px solid #000',
+                borderRadius: '3px',
+                overflow: 'hidden',
+              }}>
               {/* Qty totals grid — raw, unadjusted sums straight from items */}
               <div style={{
                 display: 'grid', gridTemplateColumns: cols,
-                borderLeft: '1px solid #ccc', borderRight: '1px solid #ccc',
                 borderBottom: '1px solid #ccc', background: '#fafafa',
               }}>
                 <span style={{
-                  gridColumn: '1 / span 5',
                   fontSize: '7pt', color: '#555', padding: '1px 3px',
                   borderRight: '1px solid #ccc',
                 }}>
                   එකතු
                 </span>
                 <span style={{
-                  fontSize: '9pt', fontWeight: 'bold', textAlign: 'right',
+                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontFamily: 'Arial Black, Arial, sans-serif',
+                  padding: '1px 2px', borderRight: '1px solid #ccc',
+                  color: morningReturnedCost > 0 ? '#c00' : '#666',
+                }}>
+                  {morningReturnedCost > 0 ? Math.round(morningReturnedCost) : '-'}
+                </span>
+                <span style={{ borderRight: '1px solid #ccc' }} />
+                <span style={{
+                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontFamily: 'Arial Black, Arial, sans-serif',
+                  padding: '1px 2px', borderRight: '1px solid #ccc',
+                  color: eveningReturnedCost > 0 ? '#c00' : '#666',
+                }}>
+                  {eveningReturnedCost > 0 ? Math.round(eveningReturnedCost) : '-'}
+                </span>
+                <span style={{ borderRight: '1px solid #ccc' }} />
+                <span style={{
+                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontFamily: 'Arial Black, Arial, sans-serif',
                   padding: '1px 2px', borderRight: '1px solid #ccc',
                   color: grandCost < 0 ? '#c00' : '#666',
                 }}>
                   {Math.round(grandCost)}
                 </span>
                 <span style={{
-                  fontSize: '9pt', fontWeight: 'bold', textAlign: 'right',
+                  fontSize: '10pt', fontWeight: 900, textAlign: 'right',
+                  fontFamily: 'Arial Black, Arial, sans-serif',
                   padding: '1px 2px',
                   color: grandSell < 0 ? '#c00' : undefined,
                 }}>
@@ -305,122 +354,190 @@ export default function BillModal({
                 </span>
               </div>
 
+              {billRows.map((row, i) => {
+                const amount = Number(row.qty) * Number(row.amount);
+                return (
+                  <div key={row.id ?? i} style={{
+                    display: 'grid',
+                    gridTemplateColumns: cols,
+                    borderBottom: '1px dotted #aaa',
+                    background: '#fff',
+                  }}>
+                    <span style={{
+                      gridColumn: '1 / span 5',
+                      fontSize: '7pt',
+                      fontWeight: 'bold',
+                      padding: '1px 3px',
+                      borderRight: '1px solid #ddd',
+                    }}>
+                      {row.description}
+                    </span>
+                    <span style={{
+                      borderRight: '1px solid #ddd',
+                      background: extraSource === 'commission' ? '#fffaf0' : undefined,
+                    }}>
+                      {extraSource === 'commission' && (
+                        <span style={{
+                          display: 'block',
+                          fontSize: '10pt',
+                          fontWeight: 900,
+                          fontFamily: 'Arial Black, Arial, sans-serif',
+                          textAlign: 'right',
+                          padding: '1px 2px',
+                          color: amount < 0 ? '#c00' : '#b45309',
+                        }}>
+                          {Math.round(amount)}
+                        </span>
+                      )}
+                    </span>
+                    <span style={{
+                      background: extraSource === 'sale' ? '#f0fdf4' : undefined,
+                    }}>
+                      {extraSource === 'sale' && (
+                        <span style={{
+                          display: 'block',
+                          fontSize: '10pt',
+                          fontWeight: 900,
+                          fontFamily: 'Arial Black, Arial, sans-serif',
+                          textAlign: 'right',
+                          padding: '1px 2px',
+                          color: amount < 0 ? '#c00' : '#15803d',
+                        }}>
+                          {Math.round(amount)}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {billRows.length > 0 && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: cols,
+                  borderBottom: '1px solid #ccc',
+                  background: '#f5f5f5',
+                }}>
+                  <span style={{
+                    gridColumn: '1 / span 5',
+                    fontSize: '7pt',
+                    fontWeight: 'bold',
+                    padding: '1px 3px',
+                    borderRight: '1px solid #ccc',
+                  }}>
+                    අතිරේක මුළු
+                  </span>
+                  <span style={{
+                    borderRight: '1px solid #ccc',
+                    fontSize: '10pt',
+                    fontWeight: 900,
+                    fontFamily: 'Arial Black, Arial, sans-serif',
+                    textAlign: 'right',
+                    padding: '1px 2px',
+                    color: extraSource === 'commission' && billRowsTotal < 0 ? '#c00' : '#b45309',
+                  }}>
+                    {extraSource === 'commission' ? `(${Math.round(billRowsTotal)})` : ''}
+                  </span>
+                  <span style={{
+                    fontSize: '10pt',
+                    fontWeight: 900,
+                    fontFamily: 'Arial Black, Arial, sans-serif',
+                    textAlign: 'right',
+                    padding: '1px 2px',
+                    color: extraSource === 'sale' && billRowsTotal < 0 ? '#c00' : '#15803d',
+                  }}>
+                    {extraSource === 'sale' ? `(${Math.round(billRowsTotal)})` : ''}
+                  </span>
+                </div>
+              )}
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: cols,
+                background: extraSource === 'sale' ? '#f0fdf4' : '#fffaf0',
+              }}>
+                <span style={{
+                  gridColumn: '1 / span 5',
+                  fontSize: '10pt',
+                  fontWeight: 900,
+                  padding: '2px 3px',
+                  borderRight: '1px solid #ccc',
+                }}>
+                  ගෙවිය යුතු මුදල
+                </span>
+                <span style={{
+                  fontSize: '14pt',
+                  fontWeight: 900,
+                  fontFamily: 'Arial Black, Arial, sans-serif',
+                  textAlign: 'right',
+                  padding: '2px 2px',
+                  color: extraSource === 'commission' && adjustedCost < 0 ? '#c00' : '#b45309',
+                }}>
+                  {extraSource === 'commission' && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '10mm',
+                      height: '8mm',
+                      padding: '0 1.5mm',
+                      boxSizing: 'border-box',
+                      border: '2px solid #000',
+                      borderRadius: '50%',
+                    }}>
+                      {Math.round(adjustedCost)}
+                    </span>
+                  )}
+                </span>
+                <span style={{
+                  fontSize: '14pt',
+                  fontWeight: 900,
+                  fontFamily: 'Arial Black, Arial, sans-serif',
+                  textAlign: 'right',
+                  padding: '2px 2px',
+                  color: extraSource === 'sale' && adjustedSell < 0 ? '#c00' : '#15803d',
+                }}>
+                  {extraSource === 'sale' && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '10mm',
+                      height: '8mm',
+                      padding: '0 1.5mm',
+                      boxSizing: 'border-box',
+                      border: '2px solid #000',
+                      borderRadius: '50%',
+                    }}>
+                      {Math.round(adjustedSell)}
+                    </span>
+                  )}
+                </span>
+              </div>
+              </div>
+
               {/* ── FINAL BALANCE ─────────────────────────────────────────── */}
               <div style={{
                 border: '2.5px solid #000',
                 borderRadius: '3px',
-                margin: '2mm 0',
-                padding: '2mm',
+                margin: '1mm 0',
+                padding: '1mm',
                 textAlign: 'center',
                 background: '#f5f5f5',
               }}>
                 <div style={{
-                  fontSize: '8.5pt', fontWeight: 'bold', letterSpacing: '0.5px',
-                  color: '#333', marginBottom: '1mm',
+                  fontSize: '7.5pt', fontWeight: 'bold', letterSpacing: '0.3px',
+                  color: '#333', marginBottom: '0.5mm',
                 }}>
                   අවසාන කොමිස් (රු.)
                 </div>
                 <div style={{
-                  fontSize: '22pt', fontWeight: 900, lineHeight: 1,
+                  fontSize: '18pt', fontWeight: 900, lineHeight: 1,
                   fontFamily: 'Arial Black, Arial, sans-serif',
                   color: finalBalance >= 0 ? '#000' : '#c00',
                 }}>
                   {Math.round(finalBalance)}
                 </div>
-              </div>
-
-              {/* Individual total boxes carry the extras adjustment. */}
-              <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
-                {bigTotalBox(
-                  'පිරිවැය (කොමිස්)',
-                  adjustedCost,
-                  '#b45309',
-                  extraSource === 'commission' && billRowsTotal !== 0 ? `+අතිරේක ${Math.round(billRowsTotal)}` : undefined
-                )}
-                {bigTotalBox(
-                  'විකිණුම (පඩි)',
-                  adjustedSell,
-                  '#15803d',
-                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined
-                )}
-              </div>
-            </div>
-
-            {/* ── EXTRA BILL ROWS ── */}
-            {billRows.length > 0 && (
-              <>
-                <div style={{ borderTop: '2px dashed #000', margin: '1.5mm 0 1mm' }} />
-                <div style={{ fontSize: '9pt', fontWeight: 'bold', marginBottom: '1mm' }}>
-                  අතිරේක ({extraSource === 'sale' ? 'විකිණුම (පඩි) වෙතින්' : 'පිරිවැය (කොමිස්) වෙතට'}):
-                </div>
-
-                <div style={{
-                  display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
-                  border: '1px solid #000',
-                  background: '#f0f0f0',
-                }}>
-                  <span style={{ fontSize: '7.5pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
-                    විස්තරය
-                  </span>
-                  <span style={{ fontSize: '7.5pt', fontWeight: 'bold', textAlign: 'right', padding: '1px 3px' }}>
-                    මුදල
-                  </span>
-                </div>
-
-                {billRows.map((row, i) => {
-                  const amt = Number(row.qty) * Number(row.amount);
-                  return (
-                    <div key={i} style={{
-                      display: 'grid', gridTemplateColumns: '2fr 1fr 1fr',
-                      borderLeft: '1px solid #ddd', borderRight: '1px solid #ddd',
-                      borderBottom: '1px dotted #aaa',
-                      padding: '1px 0',
-                    }}>
-                      <span style={{ fontSize: '8.5pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
-                        {row.description}
-                      </span>
-                      <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px', color: amt < 0 ? '#c00' : undefined }}>
-                        {Math.round(amt)}
-                      </span>
-                    </div>
-                  );
-                })}
-
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  fontSize: '8pt', fontWeight: 'bold',
-                  borderTop: '2px solid #000', padding: '1px 0',
-                  color: billRowsTotal < 0 ? '#c00' : undefined,
-                }}>
-                  <span>අතිරේක මුළු:</span>
-                  <span>රු. {Math.round(billRowsTotal)}</span>
-                </div>
-              </>
-            )}
-
-            {/* Return totals moved below the bill details, before the footer. */}
-            {(morningReturnedQty > 0 || eveningReturnedQty > 0) && (
-              <div style={{ display: 'flex', gap: '2mm', marginTop: '2mm' }}>
-                {morningReturnedQty > 0 && returnBox('උදේ ආපසු', morningReturnedQty, morningReturnedCost)}
-                {eveningReturnedQty > 0 && returnBox('සවස ආපසු', eveningReturnedQty, eveningReturnedCost)}
-              </div>
-            )}
-
-            {/* ── FOOTER ── */}
-            <div style={{ textAlign: 'center', fontSize: '7.5pt', color: '#555', paddingTop: '1mm', borderTop: '1px dashed #000' }}>
-              <div>ජනනය: {new Date().toLocaleString('si-LK')}</div>
-              <div style={{ marginTop: '1px', fontSize: '9pt', fontWeight: 'bold', letterSpacing: '2px' }}>
-                * * * ස්තුතියි * * *
-              </div>
-            </div>
-            <div style={{
-              minHeight: '14mm',
-              marginTop: '2mm',
-              padding: '1mm 2mm',
-              border: '1px solid #999',
-            }}>
-              <div style={{ fontSize: '7pt', fontWeight: 'bold', color: '#555' }}>
-                අමතර සටහන්:
               </div>
             </div>
 
@@ -444,13 +561,15 @@ export default function BillModal({
                   'පිරිවැය (කොමිස්)',
                   adjustedCost,
                   '#b45309',
-                  extraSource === 'commission' && billRowsTotal !== 0 ? `+අතිරේක ${Math.round(billRowsTotal)}` : undefined
+                  extraSource === 'commission' && billRowsTotal !== 0 ? `+අතිරේක ${Math.round(billRowsTotal)}` : undefined,
+                  extraSource === 'commission'
                 )}
                 {bigTotalBox(
                   'විකිණුම (පඩි)',
                   adjustedSell,
                   '#15803d',
-                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined
+                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined,
+                  extraSource === 'sale'
                 )}
               </div>
               <div style={{ fontSize: '8pt', fontWeight: 'bold', margin: '2mm 0 1mm' }}>

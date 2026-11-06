@@ -72,16 +72,14 @@ export default function HomePage() {
         setSessionId(existingSession.id);
         setSessionType(existingSession.session_type);
         setPaymentStatus(existingSession.payment_status);
+        setExtraSource(existingSession.extra_source === 'sale' ? 'sale' : 'commission');
         const rows = await fetch(`/api/bill-rows?session_id=${existingSession.id}`).then(r => r.json());
         setBillRows(Array.isArray(rows) ? rows : []);
       } else {
         setSessionId(null);
         setBillRows([]);
+        setExtraSource('commission');
       }
-
-      // NEW: always reset the extra-charges source back to the default
-      // ("කොමිස් මුදලින්") whenever a session (or blank slate) is loaded.
-      setExtraSource('commission');
 
       const savedMap = new Map<number, {
         morning_qty: number; morning_returned_qty: number; evening_qty: number;
@@ -138,13 +136,14 @@ export default function HomePage() {
     }, []
   );
 
-  const buildPayload = () => ({
+  const buildPayload = (source = extraSource) => ({
     session: {
       session_date: selectedDate,
       employee_id: selectedEmployee!.id,
       vehicle_id: selectedVehicle?.id || null,
       session_type: sessionType,
       payment_status: paymentStatus,
+      extra_source: source,
     },
     items: categories.flatMap(cat =>
       cat.items.map(item => ({
@@ -160,7 +159,7 @@ export default function HomePage() {
   });
 
   // ── saves normally and returns the new session_id ──────────────────────────
-  const handleAutoSave = async (): Promise<number | null> => {
+  const handleAutoSave = async (source = extraSource): Promise<number | null> => {
     if (!selectedEmployee) {
       showToast('සේවකයෙකු තෝරන්න', 'error');
       return null;
@@ -168,7 +167,7 @@ export default function HomePage() {
     const res = await fetch('/api/issues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildPayload()),
+      body: JSON.stringify(buildPayload(source)),
     });
     const data = await res.json();
     if (data.success) {
@@ -388,7 +387,6 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
         <BillModal
           categories={categories}
           employee={selectedEmployee}
-          vehicle={selectedVehicle}
           date={selectedDate}
           sessionType={sessionType}
           paymentStatus={paymentStatus}
