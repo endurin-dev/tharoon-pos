@@ -142,33 +142,17 @@ export default function BillModal({
           @page { size: 80mm auto; margin: 0; }
           body * { visibility: hidden; }
           #bill-content, #bill-content * { visibility: visible; }
-          .bill-modal-overlay,
-          .bill-modal-panel {
-            position: static !important;
-            display: block !important;
-            width: auto !important;
-            max-width: none !important;
-            max-height: none !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            background: transparent !important;
-          }
           #bill-content {
-            position: static !important;
-            width: 76mm !important;
-            height: auto !important;
-            margin: 0 auto !important;
-            padding: 2mm 3mm !important;
+            position: fixed; top: 0; left: 0;
+            width: 76mm; padding: 2mm 3mm;
             border: none !important; box-shadow: none !important;
           }
           .no-print { display: none !important; }
         }
       `}</style>
 
-      <div className="bill-modal-overlay fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bill-modal-panel bg-white text-black rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-white text-black rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
           <div id="bill-content" style={{
             width: '76mm', margin: '0 auto',
@@ -185,12 +169,12 @@ export default function BillModal({
 
             {/* ── SESSION INFO ── */}
             {[
-              ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: '2-digit', year: 'numeric' })],
+              ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: 'long', year: 'numeric' })],
               ['සේවකයා', employee?.name || '-'],
               ['ගෙවීම', paymentStatus === 'paid' ? 'ගෙවා ඇත' : 'ගෙවා නැත'],
             ].map(([label, value]) => (
               <div key={label} style={{
-                display: 'grid', gridTemplateColumns: '25% 1fr',
+                display: 'flex', justifyContent: 'space-between',
                 fontSize: '7.5pt', lineHeight: 1, padding: '0',
               }}>
                 <span style={{ fontWeight: 'bold' }}>{label}:</span>
@@ -323,9 +307,7 @@ export default function BillModal({
               {/* Qty totals grid — raw, unadjusted sums straight from items */}
               <div style={{
                 display: 'grid', gridTemplateColumns: cols,
-                borderBottom: '3px solid #000',
-                marginBottom: '1mm',
-                background: '#fafafa',
+                borderBottom: '1px solid #ccc', background: '#fafafa',
               }}>
                 <span style={{
                   fontSize: '7pt', lineHeight: 1, color: '#555', padding: '0 3px',
@@ -592,7 +574,7 @@ export default function BillModal({
                   'විකිණුම (පඩි)',
                   adjustedSell,
                   '#15803d',
-                  undefined,
+                  extraSource === 'sale' && billRowsTotal !== 0 ? `${billRowsTotal > 0 ? '+' : '−'}අතිරේක ${Math.round(Math.abs(billRowsTotal))}` : undefined,
                   extraSource === 'sale'
                 )}
               </div>
