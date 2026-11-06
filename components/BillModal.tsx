@@ -170,13 +170,15 @@ export default function BillModal({
 
           #bill-content {
             position: static !important;
-            width: 100% !important;
+            width: 72mm !important;
             max-width: 72mm !important;
-            margin: 0 !important;
+            margin: 0 0 0 4mm !important; /* push into printable area; adjust 3–5mm */
             padding: 0 !important;
             box-sizing: border-box !important;
             border: none !important;
             box-shadow: none !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
 
           /* Thermal = pure black & white */
@@ -196,7 +198,7 @@ export default function BillModal({
       >
 
         <div id="bill-content" style={{
-          width: '72mm', margin: '0',
+          width: '72mm', margin: '0 auto',
           fontFamily: "'Noto Sans Sinhala', 'Courier New', monospace",
           fontSize: '8pt', color: '#000',
           padding: '0', boxSizing: 'border-box',
