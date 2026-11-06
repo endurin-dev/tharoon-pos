@@ -6,7 +6,6 @@ interface BillModalProps {
   categories: CategoryWithItems[];
   employee: Employee | null;
   date: string;
-  sessionType: string;
   paymentStatus: string;
   billRows?: BillRow[];
   /** Which total extra charges are folded into — must match page.tsx */
@@ -15,7 +14,7 @@ interface BillModalProps {
 }
 
 export default function BillModal({
-  categories, employee, date, sessionType, paymentStatus,
+  categories, employee, date, paymentStatus,
   billRows = [], extraSource, onClose,
 }: BillModalProps) {
   const billItems = categories.flatMap(cat =>
@@ -172,13 +171,11 @@ export default function BillModal({
             {[
               ['දිනය', new Date(date).toLocaleDateString('si-LK', { day: '2-digit', month: 'long', year: 'numeric' })],
               ['සේවකයා', employee?.name || '-'],
-              ['සැසිය', sessionType === 'full_day' ? 'සම්පූර්ණ දිනය' : 'උදේ'],
               ['ගෙවීම', paymentStatus === 'paid' ? 'ගෙවා ඇත' : 'ගෙවා නැත'],
             ].map(([label, value]) => (
               <div key={label} style={{
                 display: 'flex', justifyContent: 'space-between',
-                fontSize: '8.5pt', padding: '0.5px 0',
-                borderBottom: '1px dashed #ccc',
+                fontSize: '7.5pt', lineHeight: 1, padding: '0',
               }}>
                 <span style={{ fontWeight: 'bold' }}>{label}:</span>
                 <span style={{ fontWeight: label === 'ගෙවීම' ? 'bold' : 'normal' }}>{value}</span>
@@ -552,8 +549,8 @@ export default function BillModal({
 
             {/* ── DETACHABLE TOTALS SLIP ── */}
             <div style={{
-              marginTop: '8mm',
-              paddingTop: '6mm',
+              marginTop: '3mm',
+              paddingTop: '2mm',
               borderTop: '2px dashed #000',
             }}>
               <div style={{
@@ -561,7 +558,7 @@ export default function BillModal({
                 fontSize: '7pt',
                 fontWeight: 'bold',
                 letterSpacing: '1px',
-                marginBottom: '4mm',
+                marginBottom: '1mm',
               }}>
                 ✂ මෙතැනින් වෙන් කරන්න ✂
               </div>

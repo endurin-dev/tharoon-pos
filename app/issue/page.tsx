@@ -388,7 +388,6 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
           categories={categories}
           employee={selectedEmployee}
           date={selectedDate}
-          sessionType={sessionType}
           paymentStatus={paymentStatus}
           billRows={billRows}
           extraSource={extraSource}
