@@ -582,6 +582,9 @@ export default function BillModal({
             }}>
               ✂ මෙතැනින් වෙන් කරන්න ✂
             </div>
+            <div style={{ textAlign: 'center', fontSize: '8pt', fontWeight: 'bold', marginBottom: '1mm' }}>
+              සේවකයා: {employee?.name || '-'}
+            </div>
             <div style={{ display: 'flex', gap: '2mm' }}>
               {bigTotalBox(
                 'පිරිවැය (කොමිස්)',
