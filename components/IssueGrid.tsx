@@ -499,8 +499,8 @@ export default function IssueGrid({
         >
           <div className="flex items-center gap-2">
             <span className={`text-xs transition-transform duration-200 text-white ${showExtra ? 'rotate-90' : ''}`}>▶</span>
-            <span className="text-white text-sm uppercase tracking-widest font-extrabold">
-              අතිරේක ගාස්තු
+            <span className="text-white text-xl uppercase tracking-widest font-black">
+              {extraSource === 'commission' ? 'කොමිස් බිලක්' : 'පඩි බිලක්'}
             </span>
             {billRows.length > 0 && (
               <span className="bg-white text-black border border-white text-xs font-extrabold px-2 py-0.5 rounded-full">
@@ -528,6 +528,15 @@ export default function IssueGrid({
             {/* Existing rows table */}
             {billRows.length > 0 && (
               <div className="mt-2 mb-2 rounded border border-[#cbd5e1] overflow-hidden">
+                <div className="grid grid-cols-[1fr_110px_64px] items-center px-3 py-2 bg-[#eff6ff] border-b border-[#bfdbfe]">
+                  <span className="text-[#1e40af] text-[10px] font-extrabold">
+                    අතිරේක ගණනයට පෙර ({extraSource === 'commission' ? 'පිරිවැය' : 'විකිණුම'})
+                  </span>
+                  <span className="text-right text-black text-base font-black">
+                    රු. {(extraSource === 'commission' ? grandTotalCost : grandTotalSelling).toFixed(2)}
+                  </span>
+                  <span />
+                </div>
                 <div className="grid grid-cols-[1fr_110px_64px] bg-[#e2e8f0] text-[#475569] text-[10px] uppercase tracking-widest px-3 py-1.5 border-b border-[#cbd5e1] font-bold">
                   <span>විස්තරය</span>
                   <span className="text-right">මුදල (රු.)</span>
@@ -598,11 +607,26 @@ export default function IssueGrid({
                 {/* sub-total */}
                 {billRowsTotal !== 0 && (
                   <div className="grid grid-cols-[1fr_110px_64px] px-3 py-1.5 bg-[#e2e8f0] border-t border-[#cbd5e1]">
-                    <span className="text-[#475569] text-[10px] uppercase tracking-widest font-bold">එකතුව</span>
+                    <span className="text-[#475569] text-[9px] uppercase tracking-widest font-bold">එකතුව</span>
                     <span className="text-right text-[#475569] text-xs font-bold">රු. {billRowsTotal.toFixed(2)}</span>
                     <span />
                   </div>
                 )}
+                <div className={`grid grid-cols-[1fr_110px_64px] items-center px-3 py-2 border-t-2 ${
+                  extraSource === 'commission'
+                    ? 'border-[#f59e0b] bg-[#fffbeb]'
+                    : 'border-[#22c55e] bg-[#f0fdf4]'
+                }`}>
+                  <span className={`text-[10px] font-extrabold ${
+                    extraSource === 'commission' ? 'text-[#92400e]' : 'text-[#166534]'
+                  }`}>
+                    අතිරේක ගණනයෙන් පසු ({extraSource === 'commission' ? 'පිරිවැය' : 'විකිණුම'})
+                  </span>
+                  <span className="text-right text-black text-base font-black">
+                    රු. {(extraSource === 'commission' ? grandTotalCost + billRowsTotal : grandTotalSelling + billRowsTotal).toFixed(2)}
+                  </span>
+                  <span />
+                </div>
               </div>
             )}
 

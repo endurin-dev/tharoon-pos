@@ -479,66 +479,40 @@ export default function BillModal({
                 gridTemplateColumns: cols,
                 background: extraSource === 'sale' ? '#f0fdf4' : '#fffaf0',
               }}>
-                <span style={{
-                  gridColumn: '1 / span 5',
+                <div style={{
+                  gridColumn: '1 / -1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2mm',
                   fontSize: '10pt',
                   lineHeight: 1,
                   fontWeight: 900,
                   padding: '0 3px',
-                  borderRight: '1px solid #ccc',
                 }}>
                   ගෙවිය යුතු මුදල
-                </span>
-                <span style={{
-                  fontSize: '12pt',
-                  lineHeight: 1,
-                  fontWeight: 900,
-                  fontFamily: 'Arial Black, Arial, sans-serif',
-                  textAlign: 'right',
-                  padding: '0 2px',
-                  color: extraSource === 'commission' && adjustedCost < 0 ? '#c00' : '#b45309',
-                }}>
-                  {extraSource === 'commission' && (
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minWidth: '10mm',
-                      height: '6mm',
-                      padding: '0 1.5mm',
-                      boxSizing: 'border-box',
-                      border: '2px solid #000',
-                      borderRadius: '50%',
-                    }}>
-                      {Math.round(adjustedCost)}
-                    </span>
-                  )}
-                </span>
-                <span style={{
-                  fontSize: '12pt',
-                  lineHeight: 1,
-                  fontWeight: 900,
-                  fontFamily: 'Arial Black, Arial, sans-serif',
-                  textAlign: 'right',
-                  padding: '0 2px',
-                  color: extraSource === 'sale' && adjustedSell < 0 ? '#c00' : '#15803d',
-                }}>
-                  {extraSource === 'sale' && (
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minWidth: '10mm',
-                      height: '6mm',
-                      padding: '0 1.5mm',
-                      boxSizing: 'border-box',
-                      border: '2px solid #000',
-                      borderRadius: '50%',
-                    }}>
-                      {Math.round(adjustedSell)}
-                    </span>
-                  )}
-                </span>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transform: 'translateX(2mm)',
+                    minWidth: '10mm',
+                    height: '6mm',
+                    padding: '0 1.5mm',
+                    boxSizing: 'border-box',
+                    border: '2px solid #000',
+                    borderRadius: '50%',
+                    fontSize: '12pt',
+                    lineHeight: 1,
+                    fontWeight: 900,
+                    fontFamily: 'Arial Black, Arial, sans-serif',
+                    color: (extraSource === 'commission' ? adjustedCost : adjustedSell) < 0
+                      ? '#c00'
+                      : extraSource === 'commission' ? '#b45309' : '#15803d',
+                  }}>
+                    {Math.round(extraSource === 'commission' ? adjustedCost : adjustedSell)}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -605,15 +579,31 @@ export default function BillModal({
               අතිරේක ({extraSource === 'sale' ? 'විකිණුම (පඩි) වෙතින්' : 'පිරිවැය (කොමිස්) වෙතට'}):
             </div>
             <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '10pt',
+              fontWeight: 'bold',
+              borderTop: '1px solid #000',
+              padding: '1px 0',
+              color: (extraSource === 'commission' ? grandCost : grandSell) < 0
+                ? '#c00'
+                : extraSource === 'commission' ? '#b45309' : '#15803d',
+            }}>
+              <span style={{ fontSize: '9pt' }}>
+                {extraSource === 'commission' ? 'පිරිවැය (කොමිස්):' : 'විකිණුම (පඩි):'}
+              </span>
+              <span>රු. {Math.round(extraSource === 'commission' ? grandCost : grandSell)}</span>
+            </div>
+            <div style={{
               display: 'grid',
               gridTemplateColumns: '2fr 1fr',
               border: '1px solid #000',
               background: '#f0f0f0',
             }}>
-              <span style={{ fontSize: '7pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
+              <span style={{ fontSize: '9pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
                 විස්තරය
               </span>
-              <span style={{ fontSize: '7pt', fontWeight: 'bold', textAlign: 'right', padding: '1px 3px' }}>
+              <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right', padding: '1px 3px' }}>
                 මුදල
               </span>
             </div>
@@ -628,10 +618,10 @@ export default function BillModal({
                   borderBottom: '1px dotted #aaa',
                   padding: '1px 0',
                 }}>
-                  <span style={{ fontSize: '8pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
                     {row.description}
                   </span>
-                  <span style={{ fontSize: '8pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px', color: amount < 0 ? '#c00' : undefined }}>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px', color: amount < 0 ? '#c00' : undefined }}>
                     {Math.round(amount)}
                   </span>
                 </div>
@@ -640,7 +630,7 @@ export default function BillModal({
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: '8pt',
+              fontSize: '10pt',
               fontWeight: 'bold',
               borderTop: '2px solid #000',
               padding: '1px 0',
@@ -648,6 +638,22 @@ export default function BillModal({
             }}>
               <span>අතිරේක මුළු:</span>
               <span>රු. {Math.round(billRowsTotal)}</span>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr',
+              fontSize: '12pt',
+              fontWeight: 'bold',
+              borderTop: '1px solid #000',
+              padding: '1px 0',
+              color: (extraSource === 'commission' ? adjustedCost : adjustedSell) < 0
+                ? '#c00'
+                : extraSource === 'commission' ? '#b45309' : '#15803d',
+            }}>
+              <span style={{ fontSize: '9pt', textAlign: 'center' }}>ගෙවිය යුතු මුදල:</span>
+              <span style={{ textAlign: 'right', paddingRight: '3px' }}>
+                රු. {Math.round(extraSource === 'commission' ? adjustedCost : adjustedSell)}
+              </span>
             </div>
             <div style={{ borderTop: '2px dashed #000', marginTop: '2mm' }} />
           </div>
