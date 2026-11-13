@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { CategoryWithItems, Employee, BillRow } from '@/lib/types';
 
@@ -27,6 +28,15 @@ export default function BillModal({
       return { ...item, sold, cost, sell };
     })
   );
+
+  const detachableItems = ['වඩේ', 'රෝල්ස්'].map(name => {
+    const matchingItems = categories.flatMap(category => category.items).filter(item => item.name === name);
+    return {
+      name,
+      morningQty: matchingItems.reduce((sum, item) => sum + item.morning_qty, 0),
+      eveningQty: matchingItems.reduce((sum, item) => sum + item.evening_qty, 0),
+    };
+  });
 
   const { grandCost, grandSell, morningReturnedCost, eveningReturnedCost } =
     billItems.reduce((totals, item) => ({
@@ -105,6 +115,7 @@ export default function BillModal({
         fontSize: '16pt', fontWeight: 900, lineHeight: 1,
         fontFamily: 'Arial Black, Arial, sans-serif',
         color: value < 0 ? '#c00' : accentColor,
+        textAlign: 'center',
         ...(highlightValue ? {
           display: 'table',
           margin: '0 auto',
@@ -559,6 +570,35 @@ export default function BillModal({
             <div style={{ textAlign: 'center', fontSize: '8pt', fontWeight: 'bold', marginBottom: '1mm' }}>
               සේවකයා: {employee?.name || '-'}
             </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1.2fr 1fr 1fr',
+              border: '1px solid #000',
+              marginBottom: '1.5mm',
+            }}>
+              <span style={{ fontSize: '7pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
+                භාණ්ඩය
+              </span>
+              <span style={{ fontSize: '7pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px', borderRight: '1px solid #000' }}>
+                උදේ ප්‍රමාණ
+              </span>
+              <span style={{ fontSize: '7pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px' }}>
+                සවස ප්‍රමාණ
+              </span>
+              {detachableItems.map(item => (
+                <Fragment key={item.name}>
+                  <span style={{ fontSize: '8pt', fontWeight: 'bold', padding: '1px 3px', borderTop: '1px solid #ccc', borderRight: '1px solid #ccc' }}>
+                    {item.name}
+                  </span>
+                  <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px', borderTop: '1px solid #ccc', borderRight: '1px solid #ccc' }}>
+                    {item.morningQty || '-'}
+                  </span>
+                  <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px', borderTop: '1px solid #ccc' }}>
+                    {item.eveningQty || '-'}
+                  </span>
+                </Fragment>
+              ))}
+            </div>
             <div style={{ display: 'flex', gap: '2mm' }}>
               {bigTotalBox(
                 'පිරිවැය (කොමිස්)',
@@ -579,8 +619,8 @@ export default function BillModal({
               අතිරේක ({extraSource === 'sale' ? 'විකිණුම (පඩි) වෙතින්' : 'පිරිවැය (කොමිස්) වෙතට'}):
             </div>
             <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr',
               fontSize: '10pt',
               fontWeight: 'bold',
               borderTop: '1px solid #000',
@@ -589,10 +629,12 @@ export default function BillModal({
                 ? '#c00'
                 : extraSource === 'commission' ? '#b45309' : '#15803d',
             }}>
-              <span style={{ fontSize: '9pt' }}>
+              <span style={{ fontSize: '9pt', textAlign: 'center' }}>
                 {extraSource === 'commission' ? 'පිරිවැය (කොමිස්):' : 'විකිණුම (පඩි):'}
               </span>
-              <span>රු. {Math.round(extraSource === 'commission' ? grandCost : grandSell)}</span>
+              <span style={{ textAlign: 'center' }}>
+                රු. {Math.round(extraSource === 'commission' ? grandCost : grandSell)}
+              </span>
             </div>
             <div style={{
               display: 'grid',
@@ -600,10 +642,10 @@ export default function BillModal({
               border: '1px solid #000',
               background: '#f0f0f0',
             }}>
-              <span style={{ fontSize: '9pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
+              <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 3px', borderRight: '1px solid #000' }}>
                 විස්තරය
               </span>
-              <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'right', padding: '1px 3px' }}>
+              <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 3px' }}>
                 මුදල
               </span>
             </div>
@@ -618,30 +660,32 @@ export default function BillModal({
                   borderBottom: '1px dotted #aaa',
                   padding: '1px 0',
                 }}>
-                  <span style={{ fontSize: '10pt', fontWeight: 'bold', padding: '0 3px', borderRight: '1px solid #ddd' }}>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'center', padding: '0 3px', borderRight: '1px solid #ddd' }}>
                     {row.description}
                   </span>
-                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'right', padding: '0 3px', color: amount < 0 ? '#c00' : undefined }}>
+                  <span style={{ fontSize: '10pt', fontWeight: 'bold', textAlign: 'center', padding: '0 3px', color: amount < 0 ? '#c00' : undefined }}>
                     {Math.round(amount)}
                   </span>
                 </div>
               );
             })}
             <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr',
               fontSize: '10pt',
               fontWeight: 'bold',
               borderTop: '2px solid #000',
               padding: '1px 0',
               color: billRowsTotal < 0 ? '#c00' : undefined,
             }}>
-              <span>අතිරේක මුළු:</span>
-              <span>රු. {Math.round(billRowsTotal)}</span>
+              <span style={{ textAlign: 'center' }}>අතිරේක මුළු:</span>
+              <span style={{ textAlign: 'center' }}>
+                රු. {Math.round(billRowsTotal)}
+              </span>
             </div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '2fr 1fr',
+              gridTemplateColumns: '1.5fr 1fr',
               fontSize: '12pt',
               fontWeight: 'bold',
               borderTop: '1px solid #000',
@@ -651,7 +695,7 @@ export default function BillModal({
                 : extraSource === 'commission' ? '#b45309' : '#15803d',
             }}>
               <span style={{ fontSize: '9pt', textAlign: 'center' }}>ගෙවිය යුතු මුදල:</span>
-              <span style={{ textAlign: 'right', paddingRight: '3px' }}>
+              <span style={{ textAlign: 'center' }}>
                 රු. {Math.round(extraSource === 'commission' ? adjustedCost : adjustedSell)}
               </span>
             </div>
