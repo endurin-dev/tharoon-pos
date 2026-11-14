@@ -33,8 +33,10 @@ export default function BillModal({
     const matchingItems = categories.flatMap(category => category.items).filter(item => item.name === name);
     return {
       name,
-      morningQty: matchingItems.reduce((sum, item) => sum + item.morning_qty, 0),
-      eveningQty: matchingItems.reduce((sum, item) => sum + item.evening_qty, 0),
+      soldQty: matchingItems.reduce(
+        (sum, item) => sum + item.morning_qty - item.morning_returned_qty + item.evening_qty - item.returned_qty,
+        0
+      ),
     };
   });
 
@@ -572,29 +574,23 @@ export default function BillModal({
             </div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1.2fr 1fr 1fr',
+              gridTemplateColumns: '1.2fr 1fr',
               border: '1px solid #000',
               marginBottom: '1.5mm',
             }}>
               <span style={{ fontSize: '7pt', fontWeight: 'bold', padding: '1px 3px', borderRight: '1px solid #000' }}>
                 භාණ්ඩය
               </span>
-              <span style={{ fontSize: '7pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px', borderRight: '1px solid #000' }}>
-                උදේ ප්‍රමාණ
-              </span>
               <span style={{ fontSize: '7pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px' }}>
-                සවස ප්‍රමාණ
+                විකිණුම
               </span>
               {detachableItems.map(item => (
                 <Fragment key={item.name}>
                   <span style={{ fontSize: '8pt', fontWeight: 'bold', padding: '1px 3px', borderTop: '1px solid #ccc', borderRight: '1px solid #ccc' }}>
                     {item.name}
                   </span>
-                  <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px', borderTop: '1px solid #ccc', borderRight: '1px solid #ccc' }}>
-                    {item.morningQty || '-'}
-                  </span>
                   <span style={{ fontSize: '9pt', fontWeight: 'bold', textAlign: 'center', padding: '1px 2px', borderTop: '1px solid #ccc' }}>
-                    {item.eveningQty || '-'}
+                    {item.soldQty || '-'}
                   </span>
                 </Fragment>
               ))}
