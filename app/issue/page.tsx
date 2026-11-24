@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import IssueGrid from '@/components/IssueGrid';
 import BillModal from '@/components/BillModal';
-import SummaryModal from '@/components/SummaryModal';
 import { CategoryWithItems, Employee, Vehicle, BillRow } from '@/lib/types';
 
 export default function HomePage() {
@@ -22,7 +21,6 @@ export default function HomePage() {
   const [sessionExists, setSessionExists] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [showBill, setShowBill] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const [billRows, setBillRows] = useState<BillRow[]>([]);
@@ -263,6 +261,10 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
   // headline number. Must mirror BillModal.tsx's finalBalance exactly.
   const finalBalance = grandTotalSelling - grandTotalCost;
 
+  const openSummary = () => {
+    window.open(`/summary?date=${encodeURIComponent(selectedDate)}`, '_blank', 'noopener,noreferrer');
+  };
+
   const handleSave = async () => {
     if (!selectedEmployee) return showToast('සේවකයෙකු තෝරන්න', 'error');
     setIsSaving(true);
@@ -321,7 +323,7 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
           </select>
         </label>
         <div className="flex items-center gap-1">
-          <button onClick={() => setShowSummary(true)} className="h-6 px-1.5 bg-[#e2e8f0] hover:bg-[#cbd5e1] text-[#2563eb] rounded border border-[#cbd5e1] transition-all whitespace-nowrap">සාරාංශය</button>
+          <button onClick={openSummary} className="h-6 px-1.5 bg-[#e2e8f0] hover:bg-[#cbd5e1] text-[#2563eb] rounded border border-[#cbd5e1] transition-all whitespace-nowrap">සාරාංශය</button>
           <button onClick={() => setShowBill(true)} className="h-6 px-1.5 bg-[#f0fdf4] hover:bg-[#dcfce7] text-[#15803d] rounded border border-[#dcfce7] transition-all whitespace-nowrap">බිල ලබාගන්න</button>
         </div>
         <div className="flex items-center gap-2 border-l border-[#e2e8f0] pl-2">
@@ -358,7 +360,7 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
           onSave={handleSave}
           onUpdate={handleUpdate}
           onGetBill={() => setShowBill(true)}
-          onSummary={() => setShowSummary(true)}
+          onSummary={openSummary}
           isSaving={isSaving}
           sessionExists={sessionExists}
           sessionId={sessionId}
@@ -395,9 +397,6 @@ const grandTotalSelling = categories.reduce((sum, cat) =>
         />
       )}
 
-      {showSummary && (
-        <SummaryModal date={selectedDate} onClose={() => setShowSummary(false)} />
-      )}
     </div>
   );
 }
